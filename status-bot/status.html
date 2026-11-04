@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Discord Status</title>
+  <style>
+    body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #1e1e2e; color: #fff; font-family: sans-serif; }
+    .dot { width: 20px; height: 20px; border-radius: 50%; display: inline-block; margin-right: 10px; }
+    .online { background: #57f287; }
+    .idle { background: #fee75c; }
+    .dnd { background: #ed4245; }
+    .offline { background: #808080; }
+  </style>
+</head>
+<body>
+  <div>
+    <span class="dot" id="dot"></span>
+    <span id="status">Loading...</span>
+  </div>
+  <script>
+    async function poll() {
+      const label = document.getElementById('status');
+      try {
+        const res = await fetch('/status', { cache: 'no-store' });
+        if (!res.ok) throw new Error(`Status request failed (${res.status})`);
+
+        const { status } = await res.json();
+        if (!['online', 'idle', 'dnd', 'offline'].includes(status)) {
+          throw new Error('Status response was invalid');
+        }
+
+        document.getElementById('dot').className = 'dot ' + status;
+        label.textContent = status.toUpperCase();
+      } catch (error) {
+        console.error('Unable to load Discord status:', error);
+        document.getElementById('dot').className = 'dot offline';
+        label.textContent = 'Unable to load status. Start the bot server and open http://localhost:3000.';
+      }
+    }
+    setInterval(poll, 3000);
+    poll();
+  </script>
+</body>
+</html>   
