@@ -4,6 +4,8 @@
   <title>Discord Status</title>
   <style>
     body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #1e1e2e; color: #fff; font-family: sans-serif; }
+    .status-card { display: flex; align-items: center; }
+    .avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; margin-right: 16px; }
     .dot { width: 20px; height: 20px; border-radius: 50%; display: inline-block; margin-right: 10px; }
     .online { background: #57f287; }
     .idle { background: #fee75c; }
@@ -12,7 +14,8 @@
   </style>
 </head>
 <body>
-  <div>
+  <div class="status-card">
+    <img class="avatar" id="avatar" alt="Discord avatar" hidden>
     <span class="dot" id="dot"></span>
     <span id="status">Loading...</span>
   </div>
@@ -23,9 +26,17 @@
         const res = await fetch('/status', { cache: 'no-store' });
         if (!res.ok) throw new Error(`Status request failed (${res.status})`);
 
-        const { status } = await res.json();
+        const { status, avatar } = await res.json();
         if (!['online', 'idle', 'dnd', 'offline'].includes(status)) {
           throw new Error('Status response was invalid');
+        }
+
+        const avatarImage = document.getElementById('avatar');
+        if (typeof avatar === 'string' && avatar.length > 0) {
+          avatarImage.src = avatar;
+          avatarImage.hidden = false;
+        } else {
+          avatarImage.hidden = true;
         }
 
         document.getElementById('dot').className = 'dot ' + status;

@@ -17,9 +17,18 @@ const client = new Client({
 
 const app = express();
 let currentStatus = 'offline';
+let currentAvatarURL = null;
 
 client.once('ready', () => {
   console.log(`Bot online as ${client.user.tag}`);
+
+  client.users.fetch(TARGET_USER_ID)
+    .then((user) => {
+      currentAvatarURL = user.displayAvatarURL({ size: 128 });
+    })
+    .catch((error) => {
+      console.error(`Unable to fetch avatar for user ${TARGET_USER_ID}:`, error);
+    });
 
   for (const guild of client.guilds.cache.values()) {
     const presence = guild.presences.cache.get(TARGET_USER_ID);
@@ -41,7 +50,10 @@ client.on('presenceUpdate', (oldPresence, newPresence) => {
 });
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'status.html')));
-app.get('/status', (req, res) => res.json({ status: currentStatus }));
+app.get('/status', (req, res) => res.json({
+  status: currentStatus,
+  avatar: currentAvatarURL,
+}));
 
 app.listen(3000, () => console.log('Web server on http://localhost:3000'));
 
