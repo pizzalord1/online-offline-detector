@@ -3,16 +3,21 @@
 <head>
   <title>Discord Status</title>
   <style>
-    body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #1e1e2e; color: #fff; font-family: sans-serif; }
+    body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #1e1e1e; color: #fff; font-family: sans-serif; }
     .status-card {
-      display: inline-block;
-      width: fit-content;
-      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
       padding: 0.75rem 1rem;
       color: rgb(0, 0, 0);
       background-color: rgb(139, 139, 139);
+      border-radius: 10px;
       border-left: 3px solid rgb(46, 46, 46);
       border-bottom: 3px solid rgb(46, 46, 46);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.25);
     }
     .avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; margin-right: 16px; }
     .dot { width: 20px; height: 20px; border-radius: 50%; display: inline-block; margin-right: 10px; }
