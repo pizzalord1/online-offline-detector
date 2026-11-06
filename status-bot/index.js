@@ -16,6 +16,7 @@ const client = new Client({
 });
 
 const app = express();
+app.use(express.static(path.join(__dirname, '..')));
 let currentStatus = 'offline';
 let currentAvatarURL = null;
 
