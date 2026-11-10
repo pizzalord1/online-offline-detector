@@ -59,10 +59,10 @@
       } catch (error) {
         console.error('Unable to load Discord status:', error);
         document.getElementById('dot').className = 'dot offline';
-        label.textContent = 'Unable to load status. Start the bot server and open http://localhost:3000.';
+        label.textContent = 'Unable to load status. Please retry.';
       }
     }
-    setInterval(poll, 3000);
+    setInterval(poll, 10000);
     poll();
   </script>
 </body>

@@ -1,12 +1,20 @@
 require('dotenv').config();
+const { readFileSync } = require('fs');
+const { createServer } = require('http');
+const { join } = require('path');
 const { Client, GatewayIntentBits } = require('discord.js');
-const express = require('express');
-const path = require('path');
 
 const { DISCORD_TOKEN, TARGET_USER_ID } = process.env;
 if (!DISCORD_TOKEN || !TARGET_USER_ID) {
-  throw new Error('Set DISCORD_TOKEN and TARGET_USER_ID in the .env file.');
+  throw new Error('Set DISCORD_TOKEN and TARGET_USER_ID in the environment.');
 }
+
+const port = Number(process.env.PORT || 3000);
+if (!Number.isInteger(port) || port < 1 || port > 65535) {
+  throw new Error('PORT must be a valid port number.');
+}
+
+const statusPage = readFileSync(join(__dirname, 'status.html'));
 
 const client = new Client({
   intents: [
@@ -15,7 +23,6 @@ const client = new Client({
   ],
 });
 
-const app = express();
 let currentStatus = 'offline';
 let currentAvatarURL = null;
 
@@ -44,18 +51,49 @@ client.once('ready', () => {
 
 client.on('presenceUpdate', (oldPresence, newPresence) => {
   if (newPresence.userId === TARGET_USER_ID) {
+    const previousStatus = currentStatus;
     currentStatus = newPresence.status;
-    console.log(`Status: ${oldPresence?.status} → ${newPresence.status}`);
+    if (previousStatus !== currentStatus) {
+      console.log(`Status: ${previousStatus} → ${currentStatus}`);
+    }
   }
 });
 
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'status.html')));
-app.get('/status', (req, res) => res.json({
-  status: currentStatus,
-  avatar: currentAvatarURL,
-}));
+const server = createServer((req, res) => {
+  const pathname = req.url?.split('?')[0];
 
-app.listen(3000, () => console.log('Web server on http://localhost:3000'));
+  if (req.method === 'GET' && pathname === '/') {
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-cache',
+    });
+    res.end(statusPage);
+    return;
+  }
+
+  if (req.method === 'GET' && pathname === '/status') {
+    res.writeHead(200, {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store',
+    });
+    res.end(JSON.stringify({
+      status: currentStatus,
+      avatar: currentAvatarURL,
+    }));
+    return;
+  }
+
+  if (req.method === 'GET' && pathname === '/health') {
+    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('ok');
+    return;
+  }
+
+  res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+  res.end('Not found');
+});
+
+server.listen(port, () => console.log(`Web server listening on port ${port}`));
 
 client.login(DISCORD_TOKEN).catch((error) => {
   console.error('Discord login failed:', error);
