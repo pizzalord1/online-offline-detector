@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { readFileSync } = require('fs');
+const { createReadStream, readFileSync } = require('fs');
 const { createServer } = require('http');
 const { join } = require('path');
 const { Client, GatewayIntentBits } = require('discord.js');
@@ -68,6 +68,23 @@ const server = createServer((req, res) => {
       'Cache-Control': 'no-cache',
     });
     res.end(statusPage);
+    return;
+  }
+
+  if (req.method === 'GET' && pathname === '/IMG_2094.JPG') {
+    const icon = createReadStream(join(__dirname, '..', 'IMG_2094.JPG'));
+    icon.on('error', (error) => {
+      console.error('Unable to serve favicon:', error);
+      if (!res.headersSent) {
+        res.writeHead(404);
+      }
+      res.end();
+    });
+    res.writeHead(200, {
+      'Content-Type': 'image/jpeg',
+      'Cache-Control': 'public, max-age=86400',
+    });
+    icon.pipe(res);
     return;
   }
 
