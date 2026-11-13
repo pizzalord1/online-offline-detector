@@ -3,51 +3,144 @@
 <head>
   <title>Discord Status</title>
   <link rel="icon" type="image/jpeg" href="/IMG_2094.JPG">
+
   <style>
-    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
-    body { display: flex; justify-content: center; align-items: center; background: #1e1e1e; color: #fff; font-family: sans-serif; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #1e1e1e;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
     .status-card {
       display: flex;
       align-items: center;
       justify-content: center;
+
       width: 100%;
       height: 100%;
+
       box-sizing: border-box;
       padding: 0.75rem 1rem;
+
       color: rgb(0, 0, 0);
       background-color: rgb(139, 139, 139);
+
       border-radius: 10px;
       border-left: 3px solid rgb(46, 46, 46);
       border-bottom: 3px solid rgb(46, 46, 46);
+
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.25);
     }
-    .avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; margin-right: 16px; }
-    .dot { width: 20px; height: 20px; border-radius: 50%; display: inline-block; margin-right: 10px; }
-    .online { background: #57f287; }
-    .idle { background: #fee75c; }
-    .dnd { background: #ed4245; }
-    .offline { background: #808080; }
+
+    .avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 16px;
+    }
+
+    .status-content {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+    }
+
+    .dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 10px;
+    }
+
+    .online {
+      background: #57f287;
+    }
+
+    .idle {
+      background: #fee75c;
+    }
+
+    .dnd {
+      background: #ed4245;
+    }
+
+    .offline {
+      background: #808080;
+    }
+
+    #status {
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    #activity {
+      margin-top: 6px;
+      font-size: 13px;
+      color: #222;
+      word-break: break-word;
+    }
   </style>
 </head>
+
 <body>
   <div class="status-card">
     <img class="avatar" id="avatar" alt="Discord avatar" hidden>
-    <span class="dot" id="dot"></span>
-    <span id="status">Loading...</span>
+
+    <div class="status-content">
+      <div class="status-row">
+        <span class="dot" id="dot"></span>
+        <span id="status">Loading...</span>
+      </div>
+
+      <div id="activity">
+        Loading activity...
+      </div>
+    </div>
   </div>
+
   <script>
     async function poll() {
-      const label = document.getElementById('status');
-      try {
-        const res = await fetch('/status', { cache: 'no-store' });
-        if (!res.ok) throw new Error(`Status request failed (${res.status})`);
+      const statusLabel = document.getElementById('status');
+      const activityLabel = document.getElementById('activity');
 
-        const { status, avatar } = await res.json();
+      try {
+        const res = await fetch('/status', {
+          cache: 'no-store'
+        });
+
+        if (!res.ok) {
+          throw new Error(`Status request failed (${res.status})`);
+        }
+
+        const {
+          status,
+          avatar,
+          activity
+        } = await res.json();
+
         if (!['online', 'idle', 'dnd', 'offline'].includes(status)) {
           throw new Error('Status response was invalid');
         }
 
         const avatarImage = document.getElementById('avatar');
+
         if (typeof avatar === 'string' && avatar.length > 0) {
           avatarImage.src = avatar;
           avatarImage.hidden = false;
@@ -56,15 +149,42 @@
         }
 
         document.getElementById('dot').className = 'dot ' + status;
-        label.textContent = status.toUpperCase();
+        statusLabel.textContent = status.toUpperCase();
+
+        if (activity && activity.name) {
+
+          let activityText =
+            `${activity.typeName}: ${activity.name}`;
+
+          if (activity.details) {
+            activityText += ` • ${activity.details}`;
+          }
+
+          if (activity.state) {
+            activityText += ` • ${activity.state}`;
+          }
+
+          activityLabel.textContent = activityText;
+
+        } else {
+          activityLabel.textContent = 'No activity';
+        }
+
       } catch (error) {
+
         console.error('Unable to load Discord status:', error);
+
         document.getElementById('dot').className = 'dot offline';
-        label.textContent = 'Unable to load status. Please retry.';
+
+        statusLabel.textContent =
+          'Unable to load status. Please retry.';
+
+        activityLabel.textContent = '';
       }
     }
+
     setInterval(poll, 10000);
     poll();
   </script>
 </body>
-</html>   
+</html>
