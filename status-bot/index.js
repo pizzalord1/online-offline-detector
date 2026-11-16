@@ -28,6 +28,7 @@ const client = new Client({
 
 let currentStatus = 'offline';
 let currentAvatarURL = null;
+let currentAvatarDecorationURL = null;
 
 let currentActivity = {
   type: null,
@@ -86,12 +87,13 @@ client.once('ready', async () => {
   console.log(`Bot online as ${client.user.tag}`);
 
   try {
-    const user = await client.users.fetch(TARGET_USER_ID);
+    const user = await client.users.fetch(TARGET_USER_ID, { force: true });
 
     currentAvatarURL = user.displayAvatarURL({
       size: 128,
       extension: 'png',
     });
+    currentAvatarDecorationURL = user.avatarDecorationURL();
   } catch (error) {
     console.error(
       `Unable to fetch avatar for user ${TARGET_USER_ID}:`,
@@ -180,6 +182,7 @@ const server = createServer((req, res) => {
       JSON.stringify({
         status: currentStatus,
         avatar: currentAvatarURL,
+        avatarDecoration: currentAvatarDecorationURL,
         activity: currentActivity,
       })
     );

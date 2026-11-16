@@ -43,11 +43,29 @@
     }
 
     .avatar {
+      position: absolute;
+      inset: 0;
       width: 48px;
       height: 48px;
       border-radius: 50%;
       object-fit: cover;
+    }
+
+    .avatar-container {
+      position: relative;
+      flex: 0 0 48px;
+      width: 48px;
+      height: 48px;
       margin-right: 16px;
+    }
+
+    .avatar-decoration {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
     }
 
     .status-content {
@@ -101,7 +119,10 @@
 
 <body>
   <div class="status-card">
-    <img class="avatar" id="avatar" alt="Discord avatar" hidden>
+    <span class="avatar-container" id="avatar-container" hidden>
+      <img class="avatar" id="avatar" alt="Discord avatar">
+      <img class="avatar-decoration" id="avatar-decoration" alt="" aria-hidden="true" hidden>
+    </span>
 
     <div class="status-content">
       <div class="status-row">
@@ -132,6 +153,7 @@
         const {
           status,
           avatar,
+          avatarDecoration,
           activity
         } = await res.json();
 
@@ -139,13 +161,25 @@
           throw new Error('Status response was invalid');
         }
 
+        const avatarContainer = document.getElementById('avatar-container');
         const avatarImage = document.getElementById('avatar');
+        const avatarDecorationImage =
+          document.getElementById('avatar-decoration');
 
         if (typeof avatar === 'string' && avatar.length > 0) {
           avatarImage.src = avatar;
-          avatarImage.hidden = false;
+          avatarContainer.hidden = false;
         } else {
-          avatarImage.hidden = true;
+          avatarContainer.hidden = true;
+        }
+
+        if (typeof avatarDecoration === 'string' && avatarDecoration.length > 0) {
+          if (avatarDecorationImage.src !== avatarDecoration) {
+            avatarDecorationImage.src = avatarDecoration;
+          }
+          avatarDecorationImage.hidden = false;
+        } else {
+          avatarDecorationImage.hidden = true;
         }
 
         document.getElementById('dot').className = 'dot ' + status;
