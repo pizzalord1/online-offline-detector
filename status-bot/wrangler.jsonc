@@ -1,0 +1,44 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "online-offline-status",
+  "main": "./src/index.mjs",
+  "compatibility_date": "2026-11-16",
+  "routes": [
+    {
+      "pattern": "status.pizzalord.online/*",
+      "zone_name": "pizzalord.online"
+    }
+  ],
+  "vars": {
+    "PORT": "3000"
+  },
+  "containers": [
+    {
+      "class_name": "StatusContainer",
+      "scheduling_policy": "durable_object",
+      "images": {
+        "base": {
+          "dockerfile": "./Dockerfile",
+          "build_context": ".."
+        }
+      }
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "STATUS_BOT",
+        "class_name": "StatusContainer"
+      }
+    ]
+  },
+  "exports": {
+    "StatusContainer": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    }
+  },
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  }
+}

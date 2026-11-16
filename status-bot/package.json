@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node --max-old-space-size=320 index.js",
+    "deploy": "node ./node_modules/wrangler/bin/wrangler.js deploy",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -14,5 +15,8 @@
   "dependencies": {
     "discord.js": "^14.28.1",
     "dotenv": "^18.0.9"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
   }
 }

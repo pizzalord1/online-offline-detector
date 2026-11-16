@@ -203,7 +203,7 @@ const server = createServer((req, res) => {
   res.end('Not found');
 });
 
-server.listen(port, () => {
+server.listen(port, '0.0.0.0', () => {
   console.log(`Web server listening on port ${port}`);
 });
 
