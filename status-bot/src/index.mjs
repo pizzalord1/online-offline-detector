@@ -53,6 +53,11 @@ export class StatusContainer extends DurableObject {
       throw new Error('Set DISCORD_TOKEN and TARGET_USER_ID as Worker secrets.');
     }
 
+    const runningContainer = await container.inspect();
+    if (runningContainer?.image && runningContainer.image !== container.images.base) {
+      await container.destroy('Container image updated');
+    }
+
     if (!container.running) {
       container.start({
         image: container.images.base,
