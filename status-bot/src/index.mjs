@@ -7,6 +7,7 @@ const HEALTH_CHECK_INTERVAL_MS = 500;
 const OAUTH_REDIRECT_URI = 'https://status.pizzalord.online/oauth/callback';
 const OAUTH_STATE_COOKIE = 'discord_oauth_state';
 const AVATAR_DECORATION_STORAGE_KEY = 'avatarDecorationAsset';
+const CONTAINER_IMAGE_STORAGE_KEY = 'containerImage';
 
 export class StatusContainer extends DurableObject {
   constructor(ctx, env) {
@@ -258,14 +259,20 @@ export class StatusContainer extends DurableObject {
       throw new Error('Set DISCORD_TOKEN and TARGET_USER_ID as Worker secrets.');
     }
 
+    const deployedImage = container.images.base;
+    const previousImage = await this.ctx.storage.get(CONTAINER_IMAGE_STORAGE_KEY);
     const runningContainer = await container.inspect();
-    if (runningContainer?.image && runningContainer.image !== container.images.base) {
+    const imageChanged =
+      previousImage !== deployedImage ||
+      (runningContainer?.image && runningContainer.image !== deployedImage);
+
+    if (imageChanged && container.running) {
       await container.destroy('Container image updated');
     }
 
-    if (!container.running) {
+    if (imageChanged || !container.running) {
       container.start({
-        image: container.images.base,
+        image: deployedImage,
         instance: 'lite',
         enableInternet: true,
         env: {
@@ -289,6 +296,7 @@ export class StatusContainer extends DurableObject {
         await response.body?.cancel();
 
         if (response.ok) {
+          await this.ctx.storage.put(CONTAINER_IMAGE_STORAGE_KEY, deployedImage);
           return;
         }
 

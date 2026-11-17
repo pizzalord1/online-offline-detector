@@ -116,7 +116,7 @@
     }
 
     #connect-discord {
-      margin-top: 6px;
+      margin: 6px 0 0;
       color: #222;
       font-size: 12px;
     }
@@ -140,9 +140,14 @@
         Loading activity...
       </div>
 
-      <a id="connect-discord" href="/oauth/connect">
-        Connect Discord to show avatar decoration
-      </a>
+      <p
+        id="connect-discord"
+        role="note"
+        aria-live="polite"
+        aria-keyshortcuts="Control+Shift+/"
+      >
+        Press Ctrl+Shift+/ to connect Discord
+      </p>
     </div>
   </div>
 
@@ -175,7 +180,7 @@
         const avatarImage = document.getElementById('avatar');
         const avatarDecorationImage =
           document.getElementById('avatar-decoration');
-        const connectDiscordLink =
+        const connectDiscordHint =
           document.getElementById('connect-discord');
         const hasAvatarDecoration =
           typeof avatarDecoration === 'string' && avatarDecoration.length > 0;
@@ -197,12 +202,12 @@
         }
 
         const oauthResult = new URLSearchParams(location.search).get('oauth');
-        connectDiscordLink.textContent =
+        connectDiscordHint.textContent =
           oauthResult === 'connected' && !hasAvatarDecoration
-            ? 'Connected, but no avatar decoration was found'
+            ? 'Connected, but no decoration was found. Press Ctrl+Shift+/ to try again'
             : hasAvatarDecoration
-              ? 'Refresh Discord decoration'
-              : 'Connect Discord to show avatar decoration';
+              ? 'Press Ctrl+Shift+/ to refresh Discord decoration'
+              : 'Press Ctrl+Shift+/ to connect Discord';
 
         document.getElementById('dot').className = 'dot ' + status;
         statusLabel.textContent = status.toUpperCase();
@@ -238,6 +243,20 @@
         activityLabel.textContent = '';
       }
     }
+
+    document.addEventListener('keydown', event => {
+      if (
+        event.ctrlKey &&
+        event.shiftKey &&
+        !event.altKey &&
+        !event.metaKey &&
+        !event.repeat &&
+        (event.code === 'Slash' || event.key === '?')
+      ) {
+        event.preventDefault();
+        window.location.assign('/oauth/connect');
+      }
+    });
 
     setInterval(poll, 10000);
     poll();
