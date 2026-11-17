@@ -3,6 +3,9 @@
   "name": "online-offline-status",
   "main": "./src/index.mjs",
   "compatibility_date": "2026-11-16",
+  "observability": {
+    "enabled": false
+  },
   "routes": [
     {
       "pattern": "status.pizzalord.online/*",
