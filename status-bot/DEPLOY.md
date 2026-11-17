@@ -33,6 +33,27 @@ not a secret in the same way as the token.
 The Docker build context is the repository root so the image can include
 `IMG_2094.JPG`, which the existing status page serves as its favicon.
 
+## Discord profile decoration OAuth
+
+In the Discord Developer Portal, register this exact OAuth2 redirect URI:
+
+```text
+https://status.pizzalord.online/oauth/callback
+```
+
+Set the application's Client ID and Client Secret as Worker secrets from
+`status-bot`:
+
+```sh
+node ./node_modules/wrangler/bin/wrangler.js secret put DISCORD_OAUTH_CLIENT_ID
+node ./node_modules/wrangler/bin/wrangler.js secret put DISCORD_OAUTH_CLIENT_SECRET
+```
+
+The status page's **Connect Discord** link requests only the `identify` scope.
+The callback verifies the signed-in user matches `TARGET_USER_ID`, stores only
+the decoration asset in Durable Object storage, and does not retain the OAuth
+access token. Reconnect if the account's decoration changes.
+
 ## Verify
 
 The first deployment can take several minutes while Cloudflare provisions the

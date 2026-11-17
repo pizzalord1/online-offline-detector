@@ -114,6 +114,12 @@
       color: #222;
       word-break: break-word;
     }
+
+    #connect-discord {
+      margin-top: 6px;
+      color: #222;
+      font-size: 12px;
+    }
   </style>
 </head>
 
@@ -133,6 +139,10 @@
       <div id="activity">
         Loading activity...
       </div>
+
+      <a id="connect-discord" href="/oauth/connect">
+        Connect Discord to show avatar decoration
+      </a>
     </div>
   </div>
 
@@ -165,6 +175,10 @@
         const avatarImage = document.getElementById('avatar');
         const avatarDecorationImage =
           document.getElementById('avatar-decoration');
+        const connectDiscordLink =
+          document.getElementById('connect-discord');
+        const hasAvatarDecoration =
+          typeof avatarDecoration === 'string' && avatarDecoration.length > 0;
 
         if (typeof avatar === 'string' && avatar.length > 0) {
           avatarImage.src = avatar;
@@ -173,7 +187,7 @@
           avatarContainer.hidden = true;
         }
 
-        if (typeof avatarDecoration === 'string' && avatarDecoration.length > 0) {
+        if (hasAvatarDecoration) {
           if (avatarDecorationImage.src !== avatarDecoration) {
             avatarDecorationImage.src = avatarDecoration;
           }
@@ -181,6 +195,14 @@
         } else {
           avatarDecorationImage.hidden = true;
         }
+
+        const oauthResult = new URLSearchParams(location.search).get('oauth');
+        connectDiscordLink.textContent =
+          oauthResult === 'connected' && !hasAvatarDecoration
+            ? 'Connected, but no avatar decoration was found'
+            : hasAvatarDecoration
+              ? 'Refresh Discord decoration'
+              : 'Connect Discord to show avatar decoration';
 
         document.getElementById('dot').className = 'dot ' + status;
         statusLabel.textContent = status.toUpperCase();
