@@ -49,6 +49,11 @@ export class StatusContainer extends DurableObject {
     const response = await this.ctx.container
       .getTcpPort(CONTAINER_PORT)
       .fetch(forwardedRequest);
+    if (!response) {
+      return new Response('Status container returned no response.', {
+        status: 502,
+      });
+    }
 
     if (pathname !== '/status' || !response.ok) {
       return response;
@@ -293,6 +298,9 @@ export class StatusContainer extends DurableObject {
         const response = await port.fetch('http://container/health', {
           signal: AbortSignal.timeout(1000),
         });
+        if (!response) {
+          throw new Error('Container health check returned no response.');
+        }
         await response.body?.cancel();
 
         if (response.ok) {
@@ -356,8 +364,14 @@ function getStatusBotStub(env) {
 }
 
 export default {
-  fetch(request, env) {
-    return getStatusBotStub(env).fetch(request);
+  async fetch(request, env) {
+    const response = await getStatusBotStub(env).fetch(request);
+    if (!response) {
+      return new Response('Status service returned no response.', {
+        status: 502,
+      });
+    }
+    return response;
   },
 
   scheduled(_controller, env, ctx) {
@@ -366,6 +380,9 @@ export default {
         const response = await getStatusBotStub(env).fetch(
           new Request('https://status-bot.internal/health')
         );
+        if (!response) {
+          throw new Error('Container keep-alive returned no response.');
+        }
         await response.body?.cancel();
 
         if (!response.ok) {
