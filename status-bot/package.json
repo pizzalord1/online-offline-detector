@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node --max-old-space-size=320 index.js",
-    "deploy": "node ./node_modules/wrangler/bin/wrangler.js deploy",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "check:deploy-config": "node ./scripts/predeploy-check.js",
+    "deploy": "npm run check:deploy-config && node ./node_modules/wrangler/bin/wrangler.js deploy",
+    "test": "node --test"
   },
   "keywords": [],
   "author": "",

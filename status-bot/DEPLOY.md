@@ -26,6 +26,13 @@ node ./node_modules/wrangler/bin/wrangler.js secret put TARGET_USER_ID
 npm run deploy
 ```
 
+`npm run deploy` first checks that `wrangler.jsonc` includes the
+`StatusContainer` image, its `STATUS_BOT` Durable Object binding, and the
+required Durable Object export. Always deploy through this command so Wrangler
+uploads the container configuration. Do not deploy the Worker with a raw API
+script upload that omits its container metadata; the local preflight cannot
+protect deployments that bypass this command.
+
 Wrangler prompts for each secret value. Do not commit either value or add it to
 `wrangler.jsonc`. The target user ID is required by the bot even though it is
 not a secret in the same way as the token.
