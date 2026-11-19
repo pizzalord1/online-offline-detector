@@ -17,7 +17,6 @@ const { resolvePrideTarget } = require('./pride-target');
 const { DISCORD_TOKEN, TARGET_USER_ID } = process.env;
 const MR_BEAST_GIF_URL = 'https://klipy.com/gifs/mrbeast-29';
 const PRIDE_FLAG_PATH = join(__dirname, 'pride flag.webp');
-const prideOptIns = new Set();
 
 const slashCommands = [
   new SlashCommandBuilder()
@@ -32,23 +31,13 @@ const slashCommands = [
     .setContexts(0, 1, 2),
   new SlashCommandBuilder()
     .setName('pride')
-    .setDescription('Create a Pride overlay for an opted-in member')
+    .setDescription('Create a Pride overlay for a member')
     .setIntegrationTypes(0, 1)
     .setContexts(0, 2)
     .addSubcommand(subcommand =>
       subcommand
-        .setName('enable')
-        .setDescription('Allow others to create a Pride overlay for your avatar')
-    )
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('disable')
-        .setDescription('Revoke permission to create a Pride overlay for your avatar')
-    )
-    .addSubcommand(subcommand =>
-      subcommand
         .setName('overlay')
-        .setDescription('Create an overlay for yourself or an opted-in member')
+        .setDescription('Create a Pride overlay for a member')
         .addUserOption(option =>
           option
             .setName('member')
@@ -59,24 +48,24 @@ const slashCommands = [
 ];
 
 if (!DISCORD_TOKEN || !TARGET_USER_ID) {
-  throw new Error('Set DISCORD_TOKEN and TARGET_USER_ID in the environment.');
+  throw new Error('Set DISCORD_TOKEN and TARGET_USER_ID in the environment.');
 }
 
 const port = Number(process.env.PORT || 3000);
 
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
-  throw new Error('PORT must be a valid port number.');
+  throw new Error('PORT must be a valid port number.');
 }
 
 const statusPage = readFileSync(join(__dirname, 'status.html'));
 
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildPresences,
-  GatewayIntentBits.GuildMessages,
-  GatewayIntentBits.MessageContent,
-  ],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildPresences,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+  ],
 });
 
 let currentStatus = 'offline';
@@ -84,56 +73,56 @@ let currentAvatarURL = null;
 let currentAvatarDecorationURL = null;
 
 let currentActivity = {
-  type: null,
-  typeName: null,
-  name: null,
-  details: null,
-  state: null,
+  type: null,
+  typeName: null,
+  name: null,
+  details: null,
+  state: null,
 };
 
 const ActivityTypeNames = {
-  0: 'Playing',
-  1: 'Streaming',
-  2: 'Listening',
-  3: 'Watching',
-  4: 'Custom Status',
-  5: 'Competing',
+  0: 'Playing',
+  1: 'Streaming',
+  2: 'Listening',
+  3: 'Watching',
+  4: 'Custom Status',
+  5: 'Competing',
 };
 
 function updateActivity(presence) {
-  if (!presence) {
-    currentActivity = {
-      type: null,
-      typeName: null,
-      name: null,
-      details: null,
-      state: null,
-    };
-    return;
-  }
+  if (!presence) {
+    currentActivity = {
+      type: null,
+      typeName: null,
+      name: null,
+      details: null,
+      state: null,
+    };
+    return;
+  }
 
-  const activity =
-    presence.activities.find(a => a.type !== 4) ||
-    presence.activities[0];
+  const activity =
+    presence.activities.find(a => a.type !== 4) ||
+    presence.activities[0];
 
-  if (!activity) {
-    currentActivity = {
-      type: null,
-      typeName: null,
-      name: null,
-      details: null,
-      state: null,
-    };
-    return;
-  }
+  if (!activity) {
+    currentActivity = {
+      type: null,
+      typeName: null,
+      name: null,
+      details: null,
+      state: null,
+    };
+    return;
+  }
 
-  currentActivity = {
-    type: activity.type,
-    typeName: ActivityTypeNames[activity.type] || 'unknown',
-    name: activity.name || null,
-    details: activity.details || null,
-    state: activity.state || null,
-  };
+  currentActivity = {
+    type: activity.type,
+    typeName: ActivityTypeNames[activity.type] || 'unknown',
+    name: activity.name || null,
+    details: activity.details || null,
+    state: activity.state || null,
+  };
 }
 
 async function registerSlashCommands() {
@@ -144,61 +133,61 @@ async function registerSlashCommands() {
 }
 
 client.once('ready', async () => {
-  console.log(`Bot online as ${client.user.tag}`);
+  console.log(`Bot online as ${client.user.tag}`);
 
   try {
-  await registerSlashCommands();
+    await registerSlashCommands();
   } catch (error) {
     console.error('unable to register slash commands:', error);
   }
 
-  try {
+  try {
     const user = await client.users.fetch(TARGET_USER_ID, { force: true });
 
-    currentAvatarURL = user.displayAvatarURL({
-      size: 128,
-      extension: 'png',
-    });
+    currentAvatarURL = user.displayAvatarURL({
+      size: 128,
+      extension: 'png',
+    });
     currentAvatarDecorationURL = user.avatarDecorationURL();
-  } catch (error) {
-    console.error(
-      `unable to fetch avatar for user ${TARGET_USER_ID}:`,
-      error
-    );
-  }
+  } catch (error) {
+    console.error(
+      `unable to fetch avatar for user ${TARGET_USER_ID}:`,
+      error
+    );
+  }
 
-  for (const guild of client.guilds.cache.values()) {
-    const presence = guild.presences.cache.get(TARGET_USER_ID);
+  for (const guild of client.guilds.cache.values()) {
+    const presence = guild.presences.cache.get(TARGET_USER_ID);
 
-    if (presence) {
-      currentStatus = presence.status;
-      updateActivity(presence);
+    if (presence) {
+      currentStatus = presence.status;
+      updateActivity(presence);
 
-      console.log(`Initial status: ${currentStatus}`);
-      console.log('Initial activity:', currentActivity);
+      console.log(`Initial status: ${currentStatus}`);
+      console.log('Initial activity:', currentActivity);
 
-      return;
-    }
-  }
+      return;
+    }
+  }
 
-  console.warn(
-    'no online presence was cached at startup; status is displayed as offline.'
-  );
+  console.warn(
+    'no online presence was cached at startup; status is displayed as offline.'
+  );
 });
 
 client.on('presenceUpdate', (oldPresence, newPresence) => {
-  if (newPresence.userId !== TARGET_USER_ID) return;
+  if (newPresence.userId !== TARGET_USER_ID) return;
 
-  const previousStatus = currentStatus;
+  const previousStatus = currentStatus;
 
-  currentStatus = newPresence.status;
-  updateActivity(newPresence);
+  currentStatus = newPresence.status;
+  updateActivity(newPresence);
 
-  if (previousStatus !== currentStatus) {
-    console.log(`Status: ${previousStatus} -> ${currentStatus}`);
-  }
+  if (previousStatus !== currentStatus) {
+    console.log(`Status: ${previousStatus} -> ${currentStatus}`);
+  }
 
-  console.log('Updated activity:', currentActivity);
+  console.log('Updated activity:', currentActivity);
 });
 
 client.on('messageCreate', async message => {
@@ -239,51 +228,13 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.commandName === 'pride') {
-      const consentScope = interaction.guildId ?? interaction.channelId;
-      if (!consentScope) {
-        await interaction.reply({
-          content: 'Use this command in a server or group chat.',
-          ephemeral: true,
-        });
-        return;
-      }
-
       const subcommand = interaction.options.getSubcommand();
-      const consentKey = `${consentScope}:${interaction.user.id}`;
-
-      if (subcommand === 'enable') {
-        prideOptIns.add(consentKey);
-        await interaction.reply({
-          content: 'You opted in. Others may now create a Pride overlay for your avatar in this conversation.',
-          ephemeral: true,
-        });
-        return;
-      }
-
-      if (subcommand === 'disable') {
-        prideOptIns.delete(consentKey);
-        await interaction.reply({
-          content: 'You opted out. Others can no longer create a Pride overlay for your avatar in this conversation.',
-          ephemeral: true,
-        });
-        return;
-      }
 
       if (subcommand === 'overlay') {
         const member = resolvePrideTarget(
           interaction.options,
           interaction.user
         );
-        if (
-          member.id !== interaction.user.id &&
-          !prideOptIns.has(`${consentScope}:${member.id}`)
-        ) {
-          await interaction.reply({
-            content: 'That member has not opted in. They can run `/pride enable` first.',
-            ephemeral: true,
-          });
-          return;
-        }
 
         await interaction.deferReply();
 
@@ -343,81 +294,81 @@ client.on('interactionCreate', async interaction => {
 });
 
 const server = createServer((req, res) => {
-  const pathname = req.url?.split('?')[0];
+  const pathname = req.url?.split('?')[0];
 
-  if (req.method === 'GET' && pathname === '/') {
-    res.writeHead(200, {
-      'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'no-cache',
-    });
+  if (req.method === 'GET' && pathname === '/') {
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-cache',
+    });
 
-    res.end(statusPage);
-    return;
-  }
+    res.end(statusPage);
+    return;
+  }
 
-  if (req.method === 'GET' && pathname === '/IMG_2094.JPG') {
-    const icon = createReadStream(
-      join(__dirname, '..', 'IMG_2094.JPG')
-    );
+  if (req.method === 'GET' && pathname === '/IMG_2094.JPG') {
+    const icon = createReadStream(
+      join(__dirname, '..', 'IMG_2094.JPG')
+    );
 
-    icon.on('error', error => {
-      console.error('Unable to serve image:', error);
+    icon.on('error', error => {
+      console.error('Unable to serve image:', error);
 
-      if (!res.headersSent) {
-        res.writeHead(404);
-      }
+      if (!res.headersSent) {
+        res.writeHead(404);
+      }
 
-      res.end();
-    });
+      res.end();
+    });
 
-    res.writeHead(200, {
-      'Content-Type': 'image/jpeg',
-      'Cache-Control': 'public, max-age=86400',
-    });
+    res.writeHead(200, {
+      'Content-Type': 'image/jpeg',
+      'Cache-Control': 'public, max-age=86400',
+    });
 
-    icon.pipe(res);
-    return;
-  }
+    icon.pipe(res);
+    return;
+  }
 
-  if (req.method === 'GET' && pathname === '/status') {
-    res.writeHead(200, {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'no-store',
-    });
+  if (req.method === 'GET' && pathname === '/status') {
+    res.writeHead(200, {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store',
+    });
 
-    res.end(
-      JSON.stringify({
-        status: currentStatus,
-        avatar: currentAvatarURL,
+    res.end(
+      JSON.stringify({
+        status: currentStatus,
+        avatar: currentAvatarURL,
         avatarDecoration: currentAvatarDecorationURL,
-        activity: currentActivity,
-      })
-    );
+        activity: currentActivity,
+      })
+    );
 
-    return;
-  }
+    return;
+  }
 
-  if (req.method === 'GET' && pathname === '/health') {
-    res.writeHead(200, {
-      'Content-Type': 'text/plain; charset=utf-8',
-    });
+  if (req.method === 'GET' && pathname === '/health') {
+    res.writeHead(200, {
+      'Content-Type': 'text/plain; charset=utf-8',
+    });
 
-    res.end('ok');
-    return;
-  }
+    res.end('ok');
+    return;
+  }
 
-  res.writeHead(404, {
-    'Content-Type': 'text/plain; charset=utf-8',
-  });
+  res.writeHead(404, {
+    'Content-Type': 'text/plain; charset=utf-8',
+  });
 
-  res.end('Not found');
+  res.end('Not found');
 });
 
 server.listen(port, '0.0.0.0', () => {
-  console.log(`Web server listening on port ${port}`);
+  console.log(`Web server listening on port ${port}`);
 });
 
 client.login(DISCORD_TOKEN).catch(error => {
-  console.error('Discord login failed:', error);
-  process.exitCode = 1;
+  console.error('Discord login failed:', error);
+  process.exitCode = 1;
 });
