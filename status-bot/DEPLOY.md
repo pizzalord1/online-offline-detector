@@ -10,8 +10,8 @@ forwards site requests to the container; a five-minute Cron Trigger requests
 - The `pizzalord.online` zone is active in the Cloudflare account you deploy to.
 - Docker Desktop (or another Docker-compatible engine) is running.
 - The Discord bot token and the monitored Discord user's ID are available.
-- The bot has Discord's Presence Intent enabled and shares a server with the
-  monitored user.
+- The bot has Discord's Presence and Message Content intents enabled and shares
+  a server with the monitored user.
 
 ## Deploy
 

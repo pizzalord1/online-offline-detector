@@ -23,6 +23,8 @@ const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildPresences,
+  GatewayIntentBits.GuildMessages,
+  GatewayIntentBits.MessageContent,
   ],
 });
 
@@ -133,6 +135,25 @@ client.on('presenceUpdate', (oldPresence, newPresence) => {
   }
 
   console.log('Updated activity:', currentActivity);
+});
+
+client.on('messageCreate', async message => {
+  if (
+    message.author.bot ||
+    !message.guild ||
+    message.content.trim().toLowerCase() !== 'meow'
+  ) {
+    return;
+  }
+
+  try {
+    await message.reply({
+      content: 'Meow!',
+      allowedMentions: { repliedUser: false },
+    });
+  } catch (error) {
+    console.error('Unable to reply to meow message:', error);
+  }
 });
 
 const server = createServer((req, res) => {

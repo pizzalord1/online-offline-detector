@@ -9,7 +9,8 @@ From `status-bot`, install dependencies with `npm ci`, set `DISCORD_TOKEN` and
 port `3000` by default.
 
 The bot needs the Presence Intent enabled in the Discord Developer Portal and
-must share a server with the user being monitored.
+the Message Content Intent enabled to respond to `meow`. It must share a server
+with the user being monitored.
 
 ## Deploy on Render
 
