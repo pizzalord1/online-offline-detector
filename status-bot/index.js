@@ -138,21 +138,25 @@ client.on('presenceUpdate', (oldPresence, newPresence) => {
 });
 
 client.on('messageCreate', async message => {
-  if (
-    message.author.bot ||
-    !message.guild ||
-    message.content.trim().toLowerCase() !== 'meow'
-  ) {
-    return;
-  }
+  if (message.author.bot || !message.guild) return;
+
+  const content = message.content.trim().toLowerCase();
+  const reply =
+    content === 'meow'
+      ? 'Meow!'
+      : /\bmr\s+beast\b/.test(content)
+        ? 'https://klipy.com/gifs/mrbeast-29'
+        : null;
+
+  if (!reply) return;
 
   try {
     await message.reply({
-      content: 'Meow!',
+      content: reply,
       allowedMentions: { repliedUser: false },
     });
   } catch (error) {
-    console.error('Unable to reply to meow message:', error);
+    console.error('Unable to reply to message trigger:', error);
   }
 });
 
