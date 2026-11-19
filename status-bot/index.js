@@ -1,3 +1,5 @@
+// created by pizzasgrave on discord. Code is open source and can be found at https://github.com/pizzalord1/online-offline-detector
+
 require('dotenv').config();
 
 const { createReadStream, readFileSync } = require('fs');
