@@ -44,24 +44,28 @@ and user installation enabled. This allows the command to be used in servers
 where the bot itself has not been added, after the app has been installed to a
 user account. Global commands can take up to an hour to propagate.
 
-The bot also registers `/pride` for server use:
+The bot also registers `/pride` for servers and user-installed private-channel
+contexts, including group DMs:
 
-- `/pride enable` lets other members in that server create an overlay for your
-  avatar.
+- `/pride enable` lets other members in the current server or group DM create
+  an overlay for your avatar.
 - `/pride disable` revokes that permission.
 - `/pride overlay member:@person` sends a circular PNG with the supplied Pride
   flag blended at 32% opacity. The selected member must have opted in, unless
   you select yourself. The generated image is posted publicly in the channel.
 
 Opt-ins are held in memory and reset when the bot restarts; members must enable
-the feature again after a restart. The supplied `pride flag.webp` file is
-included in the container image.
+the feature again after a restart. An opt-in applies only to the current server
+or group DM. The supplied `pride flag.webp` file is included in the container
+image.
 
 In the Discord Developer Portal, enable **User Install** under Installation
 and enable the `Guild Install` and `User Install` integration types for the
 command. Install the app to your own account using the generated user-install
-link. A user-installed command does not give the app permission to read or
-send arbitrary messages; `/mrbeast` only responds to the interaction.
+link. `/pride` supports the private-channel context for user-installed use in
+group DMs; each person using it there must have the app installed to their
+account. User installation does not give the app permission to read or send
+arbitrary messages; commands only respond to their interactions.
 
 The Docker build context is the repository root so the image can include
 `IMG_2094.JPG`, which the existing status page serves as its favicon.

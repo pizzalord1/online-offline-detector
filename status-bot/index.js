@@ -32,8 +32,8 @@ const slashCommands = [
   new SlashCommandBuilder()
     .setName('pride')
     .setDescription('Create a Pride overlay for an opted-in member')
-    .setIntegrationTypes(0)
-    .setContexts(0)
+    .setIntegrationTypes(0, 1)
+    .setContexts(0, 2)
     .addSubcommand(subcommand =>
       subcommand
         .setName('enable')
@@ -238,21 +238,22 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.commandName === 'pride') {
-      if (!interaction.guildId) {
+      const consentScope = interaction.guildId ?? interaction.channelId;
+      if (!consentScope) {
         await interaction.reply({
-          content: 'Use this command in a server.',
+          content: 'Use this command in a server or group chat.',
           ephemeral: true,
         });
         return;
       }
 
       const subcommand = interaction.options.getSubcommand();
-      const consentKey = `${interaction.guildId}:${interaction.user.id}`;
+      const consentKey = `${consentScope}:${interaction.user.id}`;
 
       if (subcommand === 'enable') {
         prideOptIns.add(consentKey);
         await interaction.reply({
-          content: 'You opted in. Others may now create a Pride overlay for your avatar in this server.',
+          content: 'You opted in. Others may now create a Pride overlay for your avatar in this conversation.',
           ephemeral: true,
         });
         return;
@@ -261,7 +262,7 @@ client.on('interactionCreate', async interaction => {
       if (subcommand === 'disable') {
         prideOptIns.delete(consentKey);
         await interaction.reply({
-          content: 'You opted out. Others can no longer create a Pride overlay for your avatar in this server.',
+          content: 'You opted out. Others can no longer create a Pride overlay for your avatar in this conversation.',
           ephemeral: true,
         });
         return;
@@ -271,7 +272,7 @@ client.on('interactionCreate', async interaction => {
         const member = interaction.options.getUser('member', true);
         if (
           member.id !== interaction.user.id &&
-          !prideOptIns.has(`${interaction.guildId}:${member.id}`)
+          !prideOptIns.has(`${consentScope}:${member.id}`)
         ) {
           await interaction.reply({
             content: 'That member has not opted in. They can run `/pride enable` first.',
