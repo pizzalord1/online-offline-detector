@@ -39,14 +39,16 @@ Wrangler prompts for each secret value. Do not commit either value or add it to
 `wrangler.jsonc`. The target user ID is required by the bot even though it is
 not a secret in the same way as the token.
 
-On startup, and whenever it is added to a new server, the bot registers the
-`/mrbeast` slash command. The command sends the same MrBeast GIF as the
-existing `mr beast` message trigger.
+On startup, the bot registers `/mrbeast` as a global command with both guild
+and user installation enabled. This allows the command to be used in servers
+where the bot itself has not been added, after the app has been installed to a
+user account. Global commands can take up to an hour to propagate.
 
-To add the bot to another server, the person inviting it must have the
-`Manage Server` permission there. Generate an invite from the Discord Developer
-Portal with both the `bot` and `applications.commands` scopes, and grant the
-bot permission to `Send Messages` in the channels where it should respond.
+In the Discord Developer Portal, enable **User Install** under Installation
+and enable the `Guild Install` and `User Install` integration types for the
+command. Install the app to your own account using the generated user-install
+link. A user-installed command does not give the app permission to read or
+send arbitrary messages; `/mrbeast` only responds to the interaction.
 
 The Docker build context is the repository root so the image can include
 `IMG_2094.JPG`, which the existing status page serves as its favicon.

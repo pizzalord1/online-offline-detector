@@ -15,7 +15,9 @@ const MR_BEAST_GIF_URL = 'https://klipy.com/gifs/mrbeast-29';
 const slashCommands = [
   new SlashCommandBuilder()
     .setName('mrbeast')
-    .setDescription('Send the MrBeast GIF'),
+    .setDescription('Send the MrBeast GIF')
+    .setIntegrationTypes(0, 1)
+    .setContexts(0, 1, 2),
 ];
 
 if (!DISCORD_TOKEN || !TARGET_USER_ID) {
@@ -96,20 +98,18 @@ function updateActivity(presence) {
   };
 }
 
-async function registerSlashCommands(guild) {
-await guild.commands.set(
-  slashCommands.map(command => command.toJSON())
-);
-console.log(`Slash commands registered in ${guild.name}.`);
+async function registerSlashCommands() {
+  await client.application.commands.set(
+    slashCommands.map(command => command.toJSON())
+  );
+  console.log('Global slash commands registered.');
 }
 
 client.once('ready', async () => {
   console.log(`Bot online as ${client.user.tag}`);
 
   try {
-    for (const guild of client.guilds.cache.values()) {
-    await registerSlashCommands(guild);
-    }
+  await registerSlashCommands();
   } catch (error) {
     console.error('Unable to register slash commands:', error);
   }
@@ -146,17 +146,6 @@ client.once('ready', async () => {
   console.warn(
     'No online presence was cached at startup; status is displayed as offline.'
   );
-});
-
-client.on('guildCreate', async guild => {
-  try {
-    await registerSlashCommands(guild);
-  } catch (error) {
-    console.error(
-      `Unable to register slash commands in ${guild.name}:`,
-      error
-    );
-  }
 });
 
 client.on('presenceUpdate', (oldPresence, newPresence) => {
