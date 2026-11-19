@@ -184,7 +184,7 @@ client.on('messageCreate', async message => {
   try {
     await message.reply({
       content: reply,
-      allowedMentions: { repliedUser: false },
+      allowedMentions: { repliedUser: true },
     });
   } catch (error) {
     console.error('Unable to reply to message trigger:', error);
