@@ -51,7 +51,7 @@ The bot also registers `/pride` for server use:
 - `/pride disable` revokes that permission.
 - `/pride overlay member:@person` sends a circular PNG with the supplied Pride
   flag blended at 32% opacity. The selected member must have opted in, unless
-  you select yourself. The result is visible only to the command caller.
+  you select yourself. The generated image is posted publicly in the channel.
 
 Opt-ins are held in memory and reset when the bot restarts; members must enable
 the feature again after a restart. The supplied `pride flag.webp` file is

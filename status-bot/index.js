@@ -280,7 +280,7 @@ client.on('interactionCreate', async interaction => {
           return;
         }
 
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply();
 
         const avatarResponse = await fetch(
           member.displayAvatarURL({ size: 512, extension: 'png' }),
