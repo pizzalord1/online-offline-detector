@@ -61,11 +61,13 @@ image.
 
 In the Discord Developer Portal, enable **User Install** under Installation
 and enable the `Guild Install` and `User Install` integration types for the
-command. Install the app to your own account using the generated user-install
-link. `/pride` supports the private-channel context for user-installed use in
-group DMs; each person using it there must have the app installed to their
-account. User installation does not give the app permission to read or send
-arbitrary messages; commands only respond to their interactions.
+command. Configure the user-install link to include the `applications.commands`
+scope, then install the app to your own account with that link. This lets you
+use `/pride` without adding the bot to the server or group DM; the bot process
+must still be online to respond. `/pride` supports the private-channel context
+for user-installed use in group DMs. User installation does not give the app
+permission to read or send arbitrary messages; commands only respond to their
+interactions.
 
 The Docker build context is the repository root so the image can include
 `IMG_2094.JPG`, which the existing status page serves as its favicon.

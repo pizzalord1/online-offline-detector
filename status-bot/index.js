@@ -12,6 +12,7 @@ const {
   SlashCommandBuilder,
 } = require('discord.js');
 const { createPrideAvatar } = require('./pride-overlay');
+const { resolvePrideTarget } = require('./pride-target');
 
 const { DISCORD_TOKEN, TARGET_USER_ID } = process.env;
 const MR_BEAST_GIF_URL = 'https://klipy.com/gifs/mrbeast-29';
@@ -269,7 +270,10 @@ client.on('interactionCreate', async interaction => {
       }
 
       if (subcommand === 'overlay') {
-        const member = interaction.options.getUser('member', true);
+        const member = resolvePrideTarget(
+          interaction.options,
+          interaction.user
+        );
         if (
           member.id !== interaction.user.id &&
           !prideOptIns.has(`${consentScope}:${member.id}`)
