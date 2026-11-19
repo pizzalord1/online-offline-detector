@@ -18,6 +18,11 @@ const slashCommands = [
     .setDescription('Send the MrBeast GIF')
     .setIntegrationTypes(0, 1)
     .setContexts(0, 1, 2),
+  new SlashCommandBuilder()
+    .setName('meow')
+    .setDescription('Make the bot meow')
+    .setIntegrationTypes(0, 1)
+    .setContexts(0, 1, 2),
 ];
 
 if (!DISCORD_TOKEN || !TARGET_USER_ID) {
@@ -91,7 +96,7 @@ function updateActivity(presence) {
 
   currentActivity = {
     type: activity.type,
-    typeName: ActivityTypeNames[activity.type] || 'Unknown',
+    typeName: ActivityTypeNames[activity.type] || 'unknown',
     name: activity.name || null,
     details: activity.details || null,
     state: activity.state || null,
@@ -102,7 +107,7 @@ async function registerSlashCommands() {
   await client.application.commands.set(
     slashCommands.map(command => command.toJSON())
   );
-  console.log('Global slash commands registered.');
+  console.log('global slash commands registered');
 }
 
 client.once('ready', async () => {
@@ -111,7 +116,7 @@ client.once('ready', async () => {
   try {
   await registerSlashCommands();
   } catch (error) {
-    console.error('Unable to register slash commands:', error);
+    console.error('unable to register slash commands:', error);
   }
 
   try {
@@ -124,7 +129,7 @@ client.once('ready', async () => {
     currentAvatarDecorationURL = user.avatarDecorationURL();
   } catch (error) {
     console.error(
-      `Unable to fetch avatar for user ${TARGET_USER_ID}:`,
+      `unable to fetch avatar for user ${TARGET_USER_ID}:`,
       error
     );
   }
@@ -144,7 +149,7 @@ client.once('ready', async () => {
   }
 
   console.warn(
-    'No online presence was cached at startup; status is displayed as offline.'
+    'no online presence was cached at startup; status is displayed as offline.'
   );
 });
 
@@ -188,10 +193,16 @@ client.on('messageCreate', async message => {
 
 client.on('interactionCreate', async interaction => {
   if (!interaction.isChatInputCommand()) return;
-  if (interaction.commandName !== 'mrbeast') return;
 
   try {
-    await interaction.reply(MR_BEAST_GIF_URL);
+    if (interaction.commandName === 'mrbeast') {
+      await interaction.reply(MR_BEAST_GIF_URL);
+      return;
+    }
+
+    if (interaction.commandName === 'meow') {
+      await interaction.reply('Meow!');
+    }
   } catch (error) {
     console.error('Unable to reply to slash command:', error);
   }
