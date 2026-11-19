@@ -6,13 +6,17 @@ const { createReadStream, readFileSync } = require('fs');
 const { createServer } = require('http');
 const { join } = require('path');
 const {
+  AttachmentBuilder,
   Client,
   GatewayIntentBits,
   SlashCommandBuilder,
 } = require('discord.js');
+const { createPrideAvatar } = require('./pride-overlay');
 
 const { DISCORD_TOKEN, TARGET_USER_ID } = process.env;
 const MR_BEAST_GIF_URL = 'https://klipy.com/gifs/mrbeast-29';
+const PRIDE_FLAG_PATH = join(__dirname, 'pride flag.webp');
+const prideOptIns = new Set();
 
 const slashCommands = [
   new SlashCommandBuilder()
@@ -25,6 +29,32 @@ const slashCommands = [
     .setDescription('Make the bot meow')
     .setIntegrationTypes(0, 1)
     .setContexts(0, 1, 2),
+  new SlashCommandBuilder()
+    .setName('pride')
+    .setDescription('Create a Pride overlay for an opted-in member')
+    .setIntegrationTypes(0)
+    .setContexts(0)
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('enable')
+        .setDescription('Allow others to create a Pride overlay for your avatar')
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('disable')
+        .setDescription('Revoke permission to create a Pride overlay for your avatar')
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('overlay')
+        .setDescription('Create an overlay for yourself or an opted-in member')
+        .addUserOption(option =>
+          option
+            .setName('member')
+            .setDescription('Member whose avatar to use')
+            .setRequired(true)
+        )
+    ),
 ];
 
 if (!DISCORD_TOKEN || !TARGET_USER_ID) {
@@ -204,9 +234,106 @@ client.on('interactionCreate', async interaction => {
 
     if (interaction.commandName === 'meow') {
       await interaction.reply('Meow!');
+      return;
+    }
+
+    if (interaction.commandName === 'pride') {
+      if (!interaction.guildId) {
+        await interaction.reply({
+          content: 'Use this command in a server.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const subcommand = interaction.options.getSubcommand();
+      const consentKey = `${interaction.guildId}:${interaction.user.id}`;
+
+      if (subcommand === 'enable') {
+        prideOptIns.add(consentKey);
+        await interaction.reply({
+          content: 'You opted in. Others may now create a Pride overlay for your avatar in this server.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      if (subcommand === 'disable') {
+        prideOptIns.delete(consentKey);
+        await interaction.reply({
+          content: 'You opted out. Others can no longer create a Pride overlay for your avatar in this server.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      if (subcommand === 'overlay') {
+        const member = interaction.options.getUser('member', true);
+        if (
+          member.id !== interaction.user.id &&
+          !prideOptIns.has(`${interaction.guildId}:${member.id}`)
+        ) {
+          await interaction.reply({
+            content: 'That member has not opted in. They can run `/pride enable` first.',
+            ephemeral: true,
+          });
+          return;
+        }
+
+        await interaction.deferReply({ ephemeral: true });
+
+        const avatarResponse = await fetch(
+          member.displayAvatarURL({ size: 512, extension: 'png' }),
+          {
+            redirect: 'error',
+            signal: AbortSignal.timeout(10_000),
+          }
+        );
+        if (!avatarResponse.ok) {
+          throw new Error(`Discord avatar request failed with HTTP ${avatarResponse.status}.`);
+        }
+
+        const contentType = avatarResponse.headers.get('content-type') || '';
+        const contentLength = Number(avatarResponse.headers.get('content-length'));
+        if (
+          !contentType.startsWith('image/') ||
+          (Number.isFinite(contentLength) && contentLength > 8 * 1024 * 1024)
+        ) {
+          throw new Error('Discord returned an invalid or oversized avatar image.');
+        }
+
+        const avatar = Buffer.from(await avatarResponse.arrayBuffer());
+        if (avatar.length > 8 * 1024 * 1024) {
+          throw new Error('Discord returned an oversized avatar image.');
+        }
+
+        const image = await createPrideAvatar(avatar, PRIDE_FLAG_PATH);
+        await interaction.editReply({
+          content: `Pride overlay for <@${member.id}>`,
+          files: [
+            new AttachmentBuilder(image, { name: 'pride-avatar.png' }),
+          ],
+          allowedMentions: { parse: [] },
+        });
+      }
     }
   } catch (error) {
     console.error('Unable to reply to slash command:', error);
+    if (interaction.isRepliable()) {
+      const response = {
+        content: 'Unable to run this slash command. Please try again later.',
+      };
+
+      try {
+        if (interaction.deferred) {
+          await interaction.editReply(response);
+        } else if (!interaction.replied) {
+          await interaction.reply({ ...response, ephemeral: true });
+        }
+      } catch (replyError) {
+        console.error('Unable to report slash command failure:', replyError);
+      }
+    }
   }
 });
 

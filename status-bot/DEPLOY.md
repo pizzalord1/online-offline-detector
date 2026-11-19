@@ -44,6 +44,19 @@ and user installation enabled. This allows the command to be used in servers
 where the bot itself has not been added, after the app has been installed to a
 user account. Global commands can take up to an hour to propagate.
 
+The bot also registers `/pride` for server use:
+
+- `/pride enable` lets other members in that server create an overlay for your
+  avatar.
+- `/pride disable` revokes that permission.
+- `/pride overlay member:@person` sends a circular PNG with the supplied Pride
+  flag blended at 32% opacity. The selected member must have opted in, unless
+  you select yourself. The result is visible only to the command caller.
+
+Opt-ins are held in memory and reset when the bot restarts; members must enable
+the feature again after a restart. The supplied `pride flag.webp` file is
+included in the container image.
+
 In the Discord Developer Portal, enable **User Install** under Installation
 and enable the `Guild Install` and `User Install` integration types for the
 command. Install the app to your own account using the generated user-install
