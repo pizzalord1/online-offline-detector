@@ -96,17 +96,20 @@ function updateActivity(presence) {
   };
 }
 
+async function registerSlashCommands(guild) {
+await guild.commands.set(
+  slashCommands.map(command => command.toJSON())
+);
+console.log(`Slash commands registered in ${guild.name}.`);
+}
+
 client.once('ready', async () => {
   console.log(`Bot online as ${client.user.tag}`);
 
   try {
     for (const guild of client.guilds.cache.values()) {
-      await guild.commands.set(
-        slashCommands.map(command => command.toJSON())
-      );
+    await registerSlashCommands(guild);
     }
-
-    console.log('Slash commands registered.');
   } catch (error) {
     console.error('Unable to register slash commands:', error);
   }
@@ -143,6 +146,17 @@ client.once('ready', async () => {
   console.warn(
     'No online presence was cached at startup; status is displayed as offline.'
   );
+});
+
+client.on('guildCreate', async guild => {
+  try {
+    await registerSlashCommands(guild);
+  } catch (error) {
+    console.error(
+      `Unable to register slash commands in ${guild.name}:`,
+      error
+    );
+  }
 });
 
 client.on('presenceUpdate', (oldPresence, newPresence) => {
