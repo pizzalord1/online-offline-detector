@@ -13,10 +13,17 @@ const {
 } = require('discord.js');
 const { createPrideAvatar } = require('./pride-overlay');
 const { resolvePrideTarget } = require('./pride-target');
+const {
+  handleDiscordWebhook,
+  parseDiscordPublicKey,
+} = require('./discord-webhook');
 
 const { DISCORD_TOKEN, TARGET_USER_ID } = process.env;
+const { DISCORD_PUBLIC_KEY } = process.env;
 const MR_BEAST_GIF_URL = 'https://klipy.com/gifs/mrbeast-29';
 const PRIDE_FLAG_PATH = join(__dirname, 'pride flag.webp');
+const INSTALL_WELCOME_MESSAGE =
+  'Thank you for adding this bot to your apps. You can look at the bots code here, its open source! https://github.com/pizzalord1/online-offline-detector';
 
 const slashCommands = [
   new SlashCommandBuilder()
@@ -52,9 +59,18 @@ if (!DISCORD_TOKEN || !TARGET_USER_ID) {
 }
 
 const port = Number(process.env.PORT || 3000);
+const discordPublicKey = DISCORD_PUBLIC_KEY
+  ? parseDiscordPublicKey(DISCORD_PUBLIC_KEY)
+  : null;
 
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
   throw new Error('PORT must be a valid port number.');
+}
+
+if (!discordPublicKey) {
+  console.warn(
+    'Discord install welcome messages are disabled; set DISCORD_PUBLIC_KEY to enable them.'
+  );
 }
 
 const statusPage = readFileSync(join(__dirname, 'status.html'));
@@ -174,6 +190,49 @@ client.once('ready', async () => {
     'no online presence was cached at startup; status is displayed as offline.'
   );
 });
+
+async function waitForClientReady() {
+  if (client.isReady()) return;
+
+  await new Promise((resolve, reject) => {
+    const onReady = () => {
+      clearTimeout(timeout);
+      resolve();
+    };
+    const timeout = setTimeout(() => {
+      client.off('ready', onReady);
+      reject(new Error('Discord client did not become ready in time.'));
+    }, 30_000);
+
+    client.once('ready', onReady);
+  });
+}
+
+async function sendInstallWelcome(data) {
+  if (data?.integration_type !== 1) return;
+
+  const userId = data.user?.id;
+  if (typeof userId !== 'string') {
+    console.error('Discord app authorization event did not include a user ID.');
+    return;
+  }
+
+  try {
+    await waitForClientReady();
+    const user = await client.users.fetch(userId);
+    await user.send(INSTALL_WELCOME_MESSAGE);
+    console.log(`Sent app-install welcome message to user ${userId}.`);
+  } catch (error) {
+    if (error?.code === 50007) {
+      console.warn(
+        `Could not DM app-install welcome message to user ${userId}; DMs are unavailable.`
+      );
+      return;
+    }
+
+    console.error(`Unable to send app-install welcome message to user ${userId}:`, error);
+  }
+}
 
 client.on('presenceUpdate', (oldPresence, newPresence) => {
   if (newPresence.userId !== TARGET_USER_ID) return;
@@ -295,6 +354,14 @@ client.on('interactionCreate', async interaction => {
 
 const server = createServer((req, res) => {
   const pathname = req.url?.split('?')[0];
+
+  if (pathname === '/discord-events') {
+    void handleDiscordWebhook(req, res, {
+      publicKey: discordPublicKey,
+      onApplicationAuthorized: sendInstallWelcome,
+    });
+    return;
+  }
 
   if (req.method === 'GET' && pathname === '/') {
     res.writeHead(200, {

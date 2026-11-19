@@ -25,6 +25,7 @@ npm ci
 node ./node_modules/wrangler/bin/wrangler.js login
 node ./node_modules/wrangler/bin/wrangler.js secret put DISCORD_TOKEN
 node ./node_modules/wrangler/bin/wrangler.js secret put TARGET_USER_ID
+node ./node_modules/wrangler/bin/wrangler.js secret put DISCORD_PUBLIC_KEY
 npm run deploy
 ```
 
@@ -35,14 +36,23 @@ uploads the container configuration. Do not deploy the Worker with a raw API
 script upload that omits its container metadata; the local preflight cannot
 protect deployments that bypass this command.
 
-Wrangler prompts for each secret value. Do not commit either value or add it to
-`wrangler.jsonc`. The target user ID is required by the bot even though it is
-not a secret in the same way as the token.
+Wrangler prompts for each value. Keep runtime values out of `wrangler.jsonc`;
+the target user ID and public key are not secrets in the same way as the bot
+token.
 
 On startup, the bot registers `/mrbeast` as a global command with both guild
 and user installation enabled. This allows the command to be used in servers
 where the bot itself has not been added, after the app has been installed to a
 user account. Global commands can take up to an hour to propagate.
+
+To send a welcome DM when someone installs the app to their account, set
+`DISCORD_PUBLIC_KEY` to the application's public key from **General
+Information** in the Discord Developer Portal. On the portal's **Webhooks**
+page, set the endpoint URL to
+`https://status.pizzalord.online/discord-events`, enable webhook events, and
+subscribe to `APPLICATION_AUTHORIZED`. The endpoint verifies Discord's
+Ed25519 signatures and only sends DMs for user installs; server installs are
+ignored. A welcome DM is not sent when the user has DMs unavailable.
 
 The bot also registers `/pride` for servers and user-installed private-channel
 contexts, including group DMs:

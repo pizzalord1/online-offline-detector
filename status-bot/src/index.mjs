@@ -8,6 +8,7 @@ const OAUTH_REDIRECT_URI = 'https://status.pizzalord.online/oauth/callback';
 const OAUTH_STATE_COOKIE = 'discord_oauth_state';
 const AVATAR_DECORATION_STORAGE_KEY = 'avatarDecorationAsset';
 const CONTAINER_IMAGE_STORAGE_KEY = 'containerImage';
+const DISCORD_PUBLIC_KEY_STORAGE_KEY = 'discordPublicKey';
 
 export class StatusContainer extends DurableObject {
   constructor(ctx, env) {
@@ -266,22 +267,28 @@ export class StatusContainer extends DurableObject {
 
     const deployedImage = container.images.base;
     const previousImage = await this.ctx.storage.get(CONTAINER_IMAGE_STORAGE_KEY);
+    const configuredPublicKey = this.env.DISCORD_PUBLIC_KEY || '';
+    const previousPublicKey =
+      (await this.ctx.storage.get(DISCORD_PUBLIC_KEY_STORAGE_KEY)) || '';
     const runningContainer = await container.inspect();
     const imageChanged =
       previousImage !== deployedImage ||
       (runningContainer?.image && runningContainer.image !== deployedImage);
+    const publicKeyChanged = previousPublicKey !== configuredPublicKey;
+    const containerChanged = imageChanged || publicKeyChanged;
 
-    if (imageChanged && container.running) {
-      await container.destroy('Container image updated');
+    if (containerChanged && container.running) {
+      await container.destroy('Container image or Discord public key updated');
     }
 
-    if (imageChanged || !container.running) {
+    if (containerChanged || !container.running) {
       container.start({
         image: deployedImage,
         instance: 'lite',
         enableInternet: true,
         env: {
           DISCORD_TOKEN: this.env.DISCORD_TOKEN,
+          DISCORD_PUBLIC_KEY: this.env.DISCORD_PUBLIC_KEY,
           TARGET_USER_ID: this.env.TARGET_USER_ID,
           PORT: String(CONTAINER_PORT),
         },
@@ -305,6 +312,10 @@ export class StatusContainer extends DurableObject {
 
         if (response.ok) {
           await this.ctx.storage.put(CONTAINER_IMAGE_STORAGE_KEY, deployedImage);
+          await this.ctx.storage.put(
+            DISCORD_PUBLIC_KEY_STORAGE_KEY,
+            configuredPublicKey
+          );
           return;
         }
 
