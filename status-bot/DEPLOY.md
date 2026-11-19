@@ -12,6 +12,8 @@ forwards site requests to the container; a five-minute Cron Trigger requests
 - The Discord bot token and the monitored Discord user's ID are available.
 - The bot has Discord's Presence and Message Content intents enabled and shares
   a server with the monitored user.
+- The bot invite includes the `applications.commands` scope so slash commands
+  can be registered.
 
 ## Deploy
 
@@ -36,6 +38,10 @@ protect deployments that bypass this command.
 Wrangler prompts for each secret value. Do not commit either value or add it to
 `wrangler.jsonc`. The target user ID is required by the bot even though it is
 not a secret in the same way as the token.
+
+On startup, the bot registers the `/mrbeast` slash command in every server it
+belongs to. The command sends the same MrBeast GIF as the existing `mr beast`
+message trigger.
 
 The Docker build context is the repository root so the image can include
 `IMG_2094.JPG`, which the existing status page serves as its favicon.

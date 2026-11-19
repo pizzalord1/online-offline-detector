@@ -3,9 +3,20 @@ require('dotenv').config();
 const { createReadStream, readFileSync } = require('fs');
 const { createServer } = require('http');
 const { join } = require('path');
-const { Client, GatewayIntentBits } = require('discord.js');
+const {
+  Client,
+  GatewayIntentBits,
+  SlashCommandBuilder,
+} = require('discord.js');
 
 const { DISCORD_TOKEN, TARGET_USER_ID } = process.env;
+const MR_BEAST_GIF_URL = 'https://klipy.com/gifs/mrbeast-29';
+
+const slashCommands = [
+  new SlashCommandBuilder()
+    .setName('mrbeast')
+    .setDescription('Send the MrBeast GIF'),
+];
 
 if (!DISCORD_TOKEN || !TARGET_USER_ID) {
   throw new Error('Set DISCORD_TOKEN and TARGET_USER_ID in the environment.');
@@ -88,6 +99,18 @@ function updateActivity(presence) {
 client.once('ready', async () => {
   console.log(`Bot online as ${client.user.tag}`);
 
+  try {
+    for (const guild of client.guilds.cache.values()) {
+      await guild.commands.set(
+        slashCommands.map(command => command.toJSON())
+      );
+    }
+
+    console.log('Slash commands registered.');
+  } catch (error) {
+    console.error('Unable to register slash commands:', error);
+  }
+
   try {
     const user = await client.users.fetch(TARGET_USER_ID, { force: true });
 
@@ -145,7 +168,7 @@ client.on('messageCreate', async message => {
     content === 'meow'
       ? 'Meow!'
       : /\bmr\s+beast\b/.test(content)
-        ? 'https://klipy.com/gifs/mrbeast-29'
+        ? MR_BEAST_GIF_URL
         : null;
 
   if (!reply) return;
@@ -157,6 +180,17 @@ client.on('messageCreate', async message => {
     });
   } catch (error) {
     console.error('Unable to reply to message trigger:', error);
+  }
+});
+
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isChatInputCommand()) return;
+  if (interaction.commandName !== 'mrbeast') return;
+
+  try {
+    await interaction.reply(MR_BEAST_GIF_URL);
+  } catch (error) {
+    console.error('Unable to reply to slash command:', error);
   }
 });
 
