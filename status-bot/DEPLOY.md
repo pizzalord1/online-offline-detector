@@ -67,10 +67,11 @@ contexts, including group DMs:
   an overlay for your avatar.
 - `/pride disable` revokes that permission.
 - `/pride overlay member:@person flag:<flag>` sends a circular PNG with the
-  selected flag blended at 35% opacity. Choose Rainbow Pride, Bisexual,
-  Aroace, Transgender, Pansexual, or Lesbian. The selected member must have
-  opted in, unless you select yourself. The generated image is posted publicly
-  in the channel.
+  selected flag blended with color-adaptive opacity from 35% to 55%. Opacity
+  increases where the flag and avatar colors contrast strongly and decreases
+  where they are similar. Choose Rainbow Pride, Bisexual, Aroace, Transgender,
+  Pansexual, or Lesbian. The selected member must have opted in, unless you
+  select yourself. The generated image is posted publicly in the channel.
 
 Opt-ins are held in memory and reset when the bot restarts; members must enable
 the feature again after a restart. An opt-in applies only to the current server
