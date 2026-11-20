@@ -11,6 +11,7 @@ const additionalFlagPaths = [
   'aroace-flag.webp',
   'trans-flag.webp',
   'pan-flag.webp',
+  'Lesbian-Pride-flag.webp',
 ].map(filename => join(__dirname, '..', filename));
 
 async function createWhiteAvatar() {

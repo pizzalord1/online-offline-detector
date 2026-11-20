@@ -27,6 +27,7 @@ const PRIDE_FLAGS = [
   { name: 'Aroace', value: 'aroace', filename: 'aroace-flag.webp' },
   { name: 'Transgender', value: 'transgender', filename: 'trans-flag.webp' },
   { name: 'Pansexual', value: 'pansexual', filename: 'pan-flag.webp' },
+  { name: 'Lesbian', value: 'lesbian', filename: 'Lesbian-Pride-flag.webp' },
 ];
 const INSTALL_WELCOME_MESSAGE =
   'Thank you for adding this bot to your apps. You can look at the bots code here, its open source! https://github.com/pizzalord1/online-offline-detector';
