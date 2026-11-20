@@ -21,7 +21,13 @@ const {
 const { DISCORD_TOKEN, TARGET_USER_ID } = process.env;
 const { DISCORD_PUBLIC_KEY } = process.env;
 const MR_BEAST_GIF_URL = 'https://klipy.com/gifs/mrbeast-29';
-const PRIDE_FLAG_PATH = join(__dirname, 'pride flag.webp');
+const PRIDE_FLAGS = [
+  { name: 'Rainbow Pride', value: 'rainbow', filename: 'pride flag.webp' },
+  { name: 'Bisexual', value: 'bisexual', filename: 'Bisexual-Pride-flag.webp' },
+  { name: 'Aroace', value: 'aroace', filename: 'aroace-flag.webp' },
+  { name: 'Transgender', value: 'transgender', filename: 'trans-flag.webp' },
+  { name: 'Pansexual', value: 'pansexual', filename: 'pan-flag.webp' },
+];
 const INSTALL_WELCOME_MESSAGE =
   'Thank you for adding this bot to your apps. You can look at the bots code here, its open source! https://github.com/pizzalord1/online-offline-detector';
 
@@ -50,6 +56,15 @@ const slashCommands = [
             .setName('member')
             .setDescription('Member whose avatar to use')
             .setRequired(true)
+        )
+        .addStringOption(option =>
+          option
+            .setName('flag')
+            .setDescription('Pride flag to use for the overlay')
+            .setRequired(true)
+            .addChoices(
+              ...PRIDE_FLAGS.map(({ name, value }) => ({ name, value }))
+            )
         )
     ),
 ];
@@ -290,6 +305,12 @@ client.on('interactionCreate', async interaction => {
       const subcommand = interaction.options.getSubcommand();
 
       if (subcommand === 'overlay') {
+        const selectedFlag = interaction.options.getString('flag', true);
+        const flag = PRIDE_FLAGS.find(item => item.value === selectedFlag);
+        if (!flag) {
+          throw new Error(`Unsupported Pride flag selection: ${selectedFlag}`);
+        }
+
         const member = resolvePrideTarget(
           interaction.options,
           interaction.user
@@ -322,9 +343,12 @@ client.on('interactionCreate', async interaction => {
           throw new Error('Discord returned an oversized avatar image.');
         }
 
-        const image = await createPrideAvatar(avatar, PRIDE_FLAG_PATH);
+        const image = await createPrideAvatar(
+          avatar,
+          join(__dirname, flag.filename)
+        );
         await interaction.editReply({
-          content: `Pride overlay for <@${member.id}>`,
+          content: `Pride overlay for <@${member.id}> using the ${flag.name} flag`,
           files: [
             new AttachmentBuilder(image, { name: 'pride-avatar.png' }),
           ],

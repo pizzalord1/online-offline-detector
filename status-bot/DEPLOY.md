@@ -60,14 +60,15 @@ contexts, including group DMs:
 - `/pride enable` lets other members in the current server or group DM create
   an overlay for your avatar.
 - `/pride disable` revokes that permission.
-- `/pride overlay member:@person` sends a circular PNG with the supplied Pride
-  flag blended at 32% opacity. The selected member must have opted in, unless
-  you select yourself. The generated image is posted publicly in the channel.
+- `/pride overlay member:@person flag:<flag>` sends a circular PNG with the
+  selected flag blended at 32% opacity. Choose Rainbow Pride, Bisexual,
+  Aroace, Transgender, or Pansexual. The selected member must have opted in,
+  unless you select yourself. The generated image is posted publicly in the
+  channel.
 
 Opt-ins are held in memory and reset when the bot restarts; members must enable
 the feature again after a restart. An opt-in applies only to the current server
-or group DM. The supplied `pride flag.webp` file is included in the container
-image.
+or group DM. All five Pride flag images are included in the container image.
 
 In the Discord Developer Portal, enable **User Install** under Installation
 and enable the `Guild Install` and `User Install` integration types for the
