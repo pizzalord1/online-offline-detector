@@ -73,9 +73,7 @@ contexts, including group DMs:
   Pansexual, or Lesbian. The selected member must have opted in, unless you
   select yourself. The generated image is posted publicly in the channel.
 
-Opt-ins are held in memory and reset when the bot restarts; members must enable
-the feature again after a restart. An opt-in applies only to the current server
-or group DM. All six Pride flag images are included in the container image.
+All six Pride flag images are included in the container image.
 
 In the Discord Developer Portal, enable **User Install** under Installation
 and enable the `Guild Install` and `User Install` integration types for the
