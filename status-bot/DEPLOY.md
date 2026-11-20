@@ -45,6 +45,12 @@ and user installation enabled. This allows the command to be used in servers
 where the bot itself has not been added, after the app has been installed to a
 user account. Global commands can take up to an hour to propagate.
 
+`/status` posts an embed with the monitored user's current cached status and
+activity. Its **Refresh** button redraws the embed from the latest presence
+event received by the bot. The bot's global activity remains **Watching the
+status**; Discord bots cannot show a separate presence for each viewer or use
+the Social SDK party and join-secret fields from the sample.
+
 To send a welcome DM when someone installs the app to their account, set
 `DISCORD_PUBLIC_KEY` to the application's public key from **General
 Information** in the Discord Developer Portal. On the portal's **Webhooks**

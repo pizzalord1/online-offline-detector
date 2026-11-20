@@ -6,6 +6,7 @@ const { createReadStream, readFileSync } = require('fs');
 const { createServer } = require('http');
 const { join } = require('path');
 const {
+  ActivityType,
   AttachmentBuilder,
   Client,
   GatewayIntentBits,
@@ -13,6 +14,10 @@ const {
 } = require('discord.js');
 const { createPrideAvatar } = require('./pride-overlay');
 const { resolvePrideTarget } = require('./pride-target');
+const {
+  createStatusMessage,
+  STATUS_REFRESH_BUTTON_ID,
+} = require('./status-embed');
 const {
   handleDiscordWebhook,
   parseDiscordPublicKey,
@@ -41,6 +46,11 @@ const slashCommands = [
   new SlashCommandBuilder()
     .setName('meow')
     .setDescription('Make the bot meow')
+    .setIntegrationTypes(0, 1)
+    .setContexts(0, 1, 2),
+  new SlashCommandBuilder()
+    .setName('status')
+    .setDescription('Show the monitored Discord status')
     .setIntegrationTypes(0, 1)
     .setContexts(0, 1, 2),
   new SlashCommandBuilder()
@@ -167,6 +177,11 @@ async function registerSlashCommands() {
 client.once('ready', async () => {
   console.log(`Bot online as ${client.user.tag}`);
 
+  client.user.setPresence({
+    status: 'online',
+    activities: [{ name: 'the status', type: ActivityType.Watching }],
+  });
+
   try {
     await registerSlashCommands();
   } catch (error) {
@@ -289,9 +304,24 @@ client.on('messageCreate', async message => {
 });
 
 client.on('interactionCreate', async interaction => {
-  if (!interaction.isChatInputCommand()) return;
+  const isStatusRefresh =
+    interaction.isButton() &&
+    interaction.customId === STATUS_REFRESH_BUTTON_ID;
+  if (!isStatusRefresh && !interaction.isChatInputCommand()) return;
 
   try {
+    if (isStatusRefresh) {
+      await interaction.update(
+        createStatusMessage({
+          userId: TARGET_USER_ID,
+          status: currentStatus,
+          avatarURL: currentAvatarURL,
+          activity: currentActivity,
+        })
+      );
+      return;
+    }
+
     if (interaction.commandName === 'mrbeast') {
       await interaction.reply(MR_BEAST_GIF_URL);
       return;
@@ -299,6 +329,18 @@ client.on('interactionCreate', async interaction => {
 
     if (interaction.commandName === 'meow') {
       await interaction.reply('Meow!');
+      return;
+    }
+
+    if (interaction.commandName === 'status') {
+      await interaction.reply(
+        createStatusMessage({
+          userId: TARGET_USER_ID,
+          status: currentStatus,
+          avatarURL: currentAvatarURL,
+          activity: currentActivity,
+        })
+      );
       return;
     }
 
