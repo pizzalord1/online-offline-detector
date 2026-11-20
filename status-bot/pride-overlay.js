@@ -1,7 +1,7 @@
 const sharp = require('sharp');
 
 const AVATAR_SIZE = 512;
-const FLAG_OPACITY = 0.32;
+const FLAG_OPACITY = 0.35;
 
 async function createPrideAvatar(avatar, flagPath) {
   if (!Buffer.isBuffer(avatar) || avatar.length === 0) {

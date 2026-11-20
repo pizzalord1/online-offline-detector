@@ -67,7 +67,7 @@ contexts, including group DMs:
   an overlay for your avatar.
 - `/pride disable` revokes that permission.
 - `/pride overlay member:@person flag:<flag>` sends a circular PNG with the
-  selected flag blended at 32% opacity. Choose Rainbow Pride, Bisexual,
+  selected flag blended at 35% opacity. Choose Rainbow Pride, Bisexual,
   Aroace, Transgender, Pansexual, or Lesbian. The selected member must have
   opted in, unless you select yourself. The generated image is posted publicly
   in the channel.
