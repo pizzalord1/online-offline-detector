@@ -78,11 +78,14 @@
       display: flex;
       flex-direction: column;
       justify-content: center;
+      flex: 1;
+      min-width: 0;
     }
 
     .status-row {
       display: flex;
       align-items: center;
+      min-width: 0;
     }
 
     .dot {
@@ -91,6 +94,7 @@
       border-radius: 50%;
       display: inline-block;
       margin-right: 10px;
+      flex: 0 0 20px;
     }
 
     .online {
@@ -112,19 +116,30 @@
     #status {
       font-weight: bold;
       font-size: 16px;
+      overflow-wrap: anywhere;
     }
 
     #activity {
       margin-top: 6px;
       font-size: 13px;
       color: #222;
-      word-break: break-word;
+      overflow-wrap: anywhere;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
     }
 
     #connect-discord {
       margin: 6px 0 0;
       color: #222;
       font-size: 12px;
+    }
+
+    @media (max-height: 100px) {
+      #connect-discord {
+        display: none;
+      }
     }
   </style>
 </head>
