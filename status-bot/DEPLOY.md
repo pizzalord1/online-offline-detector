@@ -60,18 +60,16 @@ subscribe to `APPLICATION_AUTHORIZED`. The endpoint verifies Discord's
 Ed25519 signatures and only sends DMs for user installs; server installs are
 ignored. A welcome DM is not sent when the user has DMs unavailable.
 
-The bot also registers `/pride` for servers and user-installed private-channel
-contexts, including group DMs:
-
-- `/pride enable` lets other members in the current server or group DM create
-  an overlay for your avatar.
-- `/pride disable` revokes that permission.
-- `/pride overlay member:@person flag:<flag>` sends a circular PNG with the
-  selected flag blended with color-adaptive opacity from 35% to 55%. Opacity
-  increases where the flag and avatar colors contrast strongly and decreases
-  where they are similar. Choose Rainbow Pride, Bisexual, Aroace, Transgender,
-  Pansexual, or Lesbian. The selected member must have opted in, unless you
-  select yourself. The generated image is posted publicly in the channel.
+The bot also registers `/image` for servers and user-installed private-channel
+contexts, including group DMs. `/image overlay member:@person overlay:<option>`
+sends a circular PNG with the selected Pride flag blended with color-adaptive
+opacity from 35% to 55%. Opacity increases where the overlay and avatar colors
+contrast strongly and decreases where they are similar. Choose Rainbow Pride,
+Bisexual, Aroace, Transgender, Pansexual, or Lesbian. To use a camera-roll
+image, choose **Choose your own overlay** and attach an image up to 50 MB.
+Uploads over 8 MB are automatically compressed to 8 MB or less. The selected
+member must have opted in, unless you select yourself. The generated image is
+posted publicly in the channel.
 
 All six Pride flag images are included in the container image.
 
@@ -79,8 +77,8 @@ In the Discord Developer Portal, enable **User Install** under Installation
 and enable the `Guild Install` and `User Install` integration types for the
 command. Configure the user-install link to include the `applications.commands`
 scope, then install the app to your own account with that link. This lets you
-use `/pride` without adding the bot to the server or group DM; the bot process
-must still be online to respond. `/pride` supports the private-channel context
+use `/image` without adding the bot to the server or group DM; the bot process
+must still be online to respond. `/image` supports the private-channel context
 for user-installed use in group DMs. User installation does not give the app
 permission to read or send arbitrary messages; commands only respond to their
 interactions.

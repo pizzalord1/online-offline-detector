@@ -12,7 +12,10 @@ const {
   GatewayIntentBits,
   SlashCommandBuilder,
 } = require('discord.js');
-const { createPrideAvatar } = require('./pride-overlay');
+const {
+  compressOverlayToLimit,
+  createImageOverlay,
+} = require('./image-overlay');
 const { resolvePrideTarget } = require('./pride-target');
 const {
   createStatusMessage,
@@ -34,6 +37,9 @@ const PRIDE_FLAGS = [
   { name: 'Pansexual', value: 'pansexual', filename: 'pan-flag.webp' },
   { name: 'Lesbian', value: 'lesbian', filename: 'Lesbian-Pride-flag.webp' },
 ];
+const CUSTOM_OVERLAY = 'custom';
+const MAX_OVERLAY_SIZE = 8 * 1024 * 1024;
+const MAX_UPLOAD_SIZE = 50 * 1024 * 1024;
 const INSTALL_WELCOME_MESSAGE =
   'Thank you for adding this bot to your apps. You can look at the bots code here, its open source! https://github.com/pizzalord1/online-offline-detector';
 
@@ -54,14 +60,14 @@ const slashCommands = [
     .setIntegrationTypes(0, 1)
     .setContexts(0, 1, 2),
   new SlashCommandBuilder()
-    .setName('pride')
-    .setDescription('Create a Pride overlay for a member')
+    .setName('image')
+    .setDescription('Create an image overlay for a member')
     .setIntegrationTypes(0, 1)
     .setContexts(0, 2)
     .addSubcommand(subcommand =>
       subcommand
         .setName('overlay')
-        .setDescription('Create a Pride overlay for a member')
+        .setDescription('Create an image overlay for a member')
         .addUserOption(option =>
           option
             .setName('member')
@@ -70,12 +76,19 @@ const slashCommands = [
         )
         .addStringOption(option =>
           option
-            .setName('flag')
-            .setDescription('Pride flag to use for the overlay')
+            .setName('overlay')
+            .setDescription('Choose a Pride flag or your own image')
             .setRequired(true)
             .addChoices(
-              ...PRIDE_FLAGS.map(({ name, value }) => ({ name, value }))
+              ...PRIDE_FLAGS.map(({ name, value }) => ({ name, value })),
+              { name: 'Choose your own overlay', value: CUSTOM_OVERLAY }
             )
+        )
+        .addAttachmentOption(option =>
+          option
+            .setName('image')
+            .setDescription('Image to use when choosing your own overlay')
+            .setRequired(false)
         )
     ),
 ];
@@ -344,14 +357,32 @@ client.on('interactionCreate', async interaction => {
       return;
     }
 
-    if (interaction.commandName === 'pride') {
+    if (interaction.commandName === 'image') {
       const subcommand = interaction.options.getSubcommand();
 
       if (subcommand === 'overlay') {
-        const selectedFlag = interaction.options.getString('flag', true);
-        const flag = PRIDE_FLAGS.find(item => item.value === selectedFlag);
-        if (!flag) {
-          throw new Error(`Unsupported Pride flag selection: ${selectedFlag}`);
+        const selectedOverlay = interaction.options.getString('overlay', true);
+        const flag = PRIDE_FLAGS.find(item => item.value === selectedOverlay);
+        const customOverlay =
+          selectedOverlay === CUSTOM_OVERLAY
+            ? interaction.options.getAttachment('image')
+            : null;
+
+        if (!flag && selectedOverlay !== CUSTOM_OVERLAY) {
+          throw new Error(`Unsupported image overlay selection: ${selectedOverlay}`);
+        }
+        if (
+          selectedOverlay === CUSTOM_OVERLAY &&
+          (!customOverlay ||
+            customOverlay.size < 1 ||
+            customOverlay.size > MAX_UPLOAD_SIZE)
+        ) {
+          await interaction.reply({
+            content:
+              'Choose your own overlay requires an image up to 50 MB. Images over 8 MB are compressed automatically.',
+            ephemeral: true,
+          });
+          return;
         }
 
         const member = resolvePrideTarget(
@@ -386,14 +417,52 @@ client.on('interactionCreate', async interaction => {
           throw new Error('Discord returned an oversized avatar image.');
         }
 
-        const image = await createPrideAvatar(
-          avatar,
-          join(__dirname, flag.filename)
-        );
+        let overlayImage = flag
+          ? join(__dirname, flag.filename)
+          : null;
+
+        if (customOverlay) {
+          const overlayResponse = await fetch(customOverlay.url, {
+            redirect: 'error',
+            signal: AbortSignal.timeout(10_000),
+          });
+          if (!overlayResponse.ok) {
+            throw new Error(
+              `Uploaded overlay request failed with HTTP ${overlayResponse.status}.`
+            );
+          }
+
+          const contentType = overlayResponse.headers.get('content-type') || '';
+          const contentLength = Number(
+            overlayResponse.headers.get('content-length')
+          );
+          if (
+            !contentType.startsWith('image/') ||
+            (Number.isFinite(contentLength) &&
+              contentLength > MAX_UPLOAD_SIZE)
+          ) {
+            throw new Error('Uploaded overlay is not a valid image or exceeds 50 MB.');
+          }
+
+          overlayImage = Buffer.from(await overlayResponse.arrayBuffer());
+          if (overlayImage.length > MAX_UPLOAD_SIZE) {
+            throw new Error('Uploaded overlay image exceeds 50 MB.');
+          }
+          if (overlayImage.length > MAX_OVERLAY_SIZE) {
+            overlayImage = await compressOverlayToLimit(
+              overlayImage,
+              MAX_OVERLAY_SIZE
+            );
+          }
+        }
+
+        const image = await createImageOverlay(avatar, overlayImage);
         await interaction.editReply({
-          content: `Pride overlay for <@${member.id}> using the ${flag.name} flag`,
+          content: flag
+            ? `Image overlay for <@${member.id}> using the ${flag.name} flag`
+            : `Image overlay for <@${member.id}> using your uploaded image`,
           files: [
-            new AttachmentBuilder(image, { name: 'pride-avatar.png' }),
+            new AttachmentBuilder(image, { name: 'image-overlay.png' }),
           ],
           allowedMentions: { parse: [] },
         });
