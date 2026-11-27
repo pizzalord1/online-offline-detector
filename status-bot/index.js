@@ -60,11 +60,6 @@ const slashCommands = [
     .setIntegrationTypes(0, 1)
     .setContexts(0, 1, 2),
   new SlashCommandBuilder()
-    .setName('status')
-    .setDescription('Show the monitored Discord status')
-    .setIntegrationTypes(0, 1)
-    .setContexts(0, 1, 2),
-  new SlashCommandBuilder()
     .setName('image')
     .setDescription('Create an image overlay for a member')
     .setIntegrationTypes(0, 1)
@@ -485,18 +480,6 @@ client.on('interactionCreate', async interaction => {
 
     if (interaction.commandName === 'meow') {
       await interaction.reply('Meow!');
-      return;
-    }
-
-    if (interaction.commandName === 'status') {
-      await interaction.reply(
-        createStatusMessage({
-          userId: TARGET_USER_ID,
-          status: currentStatus,
-          avatarURL: currentAvatarURL,
-          activity: currentActivity,
-        })
-      );
       return;
     }
 
