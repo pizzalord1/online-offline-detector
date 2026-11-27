@@ -3,16 +3,30 @@ const assert = require('node:assert/strict');
 
 const { resolvePrideTarget } = require('../pride-target');
 
-test('uses the invoking user when Discord omits their resolved user record', () => {
+test('uses the invoking user when self is selected', () => {
   const invokingUser = { id: 'self-id' };
   const options = {
-    get(name, required) {
+    get(name) {
       assert.equal(name, 'member');
-      assert.equal(required, true);
       return { value: invokingUser.id };
     },
     getUser() {
       assert.fail('self selection should not need resolved user data');
+    },
+  };
+
+  assert.equal(resolvePrideTarget(options, invokingUser), invokingUser);
+});
+
+test('defaults to the invoking user when no member is selected', () => {
+  const invokingUser = { id: 'self-id' };
+  const options = {
+    get(name) {
+      assert.equal(name, 'member');
+      return null;
+    },
+    getUser() {
+      assert.fail('an omitted member should default to the invoking user');
     },
   };
 

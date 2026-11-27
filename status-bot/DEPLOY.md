@@ -61,7 +61,7 @@ Ed25519 signatures and only sends DMs for user installs; server installs are
 ignored. A welcome DM is not sent when the user has DMs unavailable.
 
 The bot also registers `/image` for servers and user-installed private-channel
-contexts, including group DMs. `/image overlay member:@person overlay:<option>`
+contexts, including group DMs. `/image overlay [member:@person] overlay:<option>`
 sends a circular PNG with the selected Pride flag blended with color-adaptive
 opacity from 35% to 55%. Opacity increases where the overlay and avatar colors
 contrast strongly and decreases where they are similar. Choose Rainbow Pride,
@@ -70,7 +70,8 @@ image, choose **Choose your own overlay** and attach an image up to 50 MB.
 If no image is attached to the slash command, it opens an upload dialog to
 choose one from your device. Uploads over 8 MB are automatically compressed to
 8 MB or less. The selected member must have opted in, unless you select
-yourself. The generated image is posted publicly in the channel.
+yourself. Leave `member` empty to create an overlay for yourself. The generated
+image is posted publicly in the channel.
 
 All six Pride flag images are included in the container image.
 

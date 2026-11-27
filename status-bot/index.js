@@ -76,8 +76,8 @@ const slashCommands = [
         .addUserOption(option =>
           option
             .setName('member')
-            .setDescription('Member whose avatar to use')
-            .setRequired(true)
+            .setDescription('Member whose avatar to use; defaults to you')
+            .setRequired(false)
         )
         .addStringOption(option =>
           option

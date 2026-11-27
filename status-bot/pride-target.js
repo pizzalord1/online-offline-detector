@@ -1,6 +1,6 @@
 function resolvePrideTarget(options, invokingUser) {
-  const selectedMember = options.get('member', true);
-  if (selectedMember.value === invokingUser.id) {
+  const selectedMember = options.get('member');
+  if (!selectedMember || selectedMember.value === invokingUser.id) {
     return invokingUser;
   }
 
