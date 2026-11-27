@@ -9,7 +9,10 @@ const {
   ActivityType,
   AttachmentBuilder,
   Client,
+  FileUploadBuilder,
   GatewayIntentBits,
+  LabelBuilder,
+  ModalBuilder,
   SlashCommandBuilder,
 } = require('discord.js');
 const {
@@ -38,6 +41,8 @@ const PRIDE_FLAGS = [
   { name: 'Lesbian', value: 'lesbian', filename: 'Lesbian-Pride-flag.webp' },
 ];
 const CUSTOM_OVERLAY = 'custom';
+const IMAGE_OVERLAY_MODAL_PREFIX = 'image-overlay:';
+const IMAGE_OVERLAY_UPLOAD_ID = 'overlay_image';
 const MAX_OVERLAY_SIZE = 8 * 1024 * 1024;
 const MAX_UPLOAD_SIZE = 50 * 1024 * 1024;
 const INSTALL_WELCOME_MESSAGE =
@@ -87,7 +92,9 @@ const slashCommands = [
         .addAttachmentOption(option =>
           option
             .setName('image')
-            .setDescription('Image to use when choosing your own overlay')
+            .setDescription(
+              'Optional image; choosing your own overlay prompts for an upload if omitted'
+            )
             .setRequired(false)
         )
     ),
@@ -178,6 +185,105 @@ function updateActivity(presence) {
     details: activity.details || null,
     state: activity.state || null,
   };
+}
+
+function createOverlayUploadModal(memberId) {
+  return new ModalBuilder()
+    .setCustomId(`${IMAGE_OVERLAY_MODAL_PREFIX}${memberId}`)
+    .setTitle('Choose your own overlay')
+    .addLabelComponents(
+      new LabelBuilder()
+        .setLabel('Choose an image')
+        .setDescription('Select an image from your device (up to 50 MB).')
+        .setFileUploadComponent(
+          new FileUploadBuilder()
+            .setCustomId(IMAGE_OVERLAY_UPLOAD_ID)
+            .setRequired(true)
+            .setFileTypes('image')
+        )
+    );
+}
+
+async function sendImageOverlay(interaction, member, flag, customOverlay) {
+  if (!interaction.deferred && !interaction.replied) {
+    await interaction.deferReply();
+  }
+
+  const avatarResponse = await fetch(
+    member.displayAvatarURL({ size: 512, extension: 'png' }),
+    {
+      redirect: 'error',
+      signal: AbortSignal.timeout(10_000),
+    }
+  );
+  if (!avatarResponse.ok) {
+    throw new Error(`Discord avatar request failed with HTTP ${avatarResponse.status}.`);
+  }
+
+  const avatarContentType = avatarResponse.headers.get('content-type') || '';
+  const avatarContentLength = Number(
+    avatarResponse.headers.get('content-length')
+  );
+  if (
+    !avatarContentType.startsWith('image/') ||
+    (Number.isFinite(avatarContentLength) &&
+      avatarContentLength > MAX_OVERLAY_SIZE)
+  ) {
+    throw new Error('Discord returned an invalid or oversized avatar image.');
+  }
+
+  const avatar = Buffer.from(await avatarResponse.arrayBuffer());
+  if (avatar.length > MAX_OVERLAY_SIZE) {
+    throw new Error('Discord returned an oversized avatar image.');
+  }
+
+  let overlayImage = flag
+    ? join(__dirname, flag.filename)
+    : null;
+
+  if (customOverlay) {
+    const overlayResponse = await fetch(customOverlay.url, {
+      redirect: 'error',
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!overlayResponse.ok) {
+      throw new Error(
+        `Uploaded overlay request failed with HTTP ${overlayResponse.status}.`
+      );
+    }
+
+    const contentType = overlayResponse.headers.get('content-type') || '';
+    const contentLength = Number(
+      overlayResponse.headers.get('content-length')
+    );
+    if (
+      !contentType.startsWith('image/') ||
+      (Number.isFinite(contentLength) &&
+        contentLength > MAX_UPLOAD_SIZE)
+    ) {
+      throw new Error('Uploaded overlay is not a valid image or exceeds 50 MB.');
+    }
+
+    overlayImage = Buffer.from(await overlayResponse.arrayBuffer());
+    if (overlayImage.length > MAX_UPLOAD_SIZE) {
+      throw new Error('Uploaded overlay image exceeds 50 MB.');
+    }
+    if (overlayImage.length > MAX_OVERLAY_SIZE) {
+      overlayImage = await compressOverlayToLimit(
+        overlayImage,
+        MAX_OVERLAY_SIZE
+      );
+    }
+  }
+
+  const image = await createImageOverlay(avatar, overlayImage);
+  await interaction.editReply({
+    content: flag
+      ? `Image overlay for <@${member.id}> using the ${flag.name} flag`
+      : `Image overlay for <@${member.id}> using your uploaded image`,
+    files: [new AttachmentBuilder(image, { name: 'image-overlay.png' })],
+    allowedMentions: { parse: [] },
+  });
 }
 
 async function registerSlashCommands() {
@@ -320,9 +426,46 @@ client.on('interactionCreate', async interaction => {
   const isStatusRefresh =
     interaction.isButton() &&
     interaction.customId === STATUS_REFRESH_BUTTON_ID;
-  if (!isStatusRefresh && !interaction.isChatInputCommand()) return;
+  const isImageOverlayModal =
+    interaction.isModalSubmit() &&
+    interaction.customId.startsWith(IMAGE_OVERLAY_MODAL_PREFIX);
+  if (
+    !isStatusRefresh &&
+    !isImageOverlayModal &&
+    !interaction.isChatInputCommand()
+  ) {
+    return;
+  }
 
   try {
+    if (isImageOverlayModal) {
+      const memberId = interaction.customId.slice(
+        IMAGE_OVERLAY_MODAL_PREFIX.length
+      );
+      if (!/^\d{17,20}$/.test(memberId)) {
+        throw new Error('Image overlay modal has an invalid member ID.');
+      }
+
+      const customOverlay = interaction.fields
+        .getUploadedFiles(IMAGE_OVERLAY_UPLOAD_ID, true)
+        .first();
+      if (
+        customOverlay.size < 1 ||
+        customOverlay.size > MAX_UPLOAD_SIZE
+      ) {
+        await interaction.reply({
+          content: 'Please choose an image up to 50 MB.',
+          ephemeral: true,
+        });
+        return;
+      }
+
+      await interaction.deferReply();
+      const member = await client.users.fetch(memberId);
+      await sendImageOverlay(interaction, member, null, customOverlay);
+      return;
+    }
+
     if (isStatusRefresh) {
       await interaction.update(
         createStatusMessage({
@@ -373,13 +516,22 @@ client.on('interactionCreate', async interaction => {
         }
         if (
           selectedOverlay === CUSTOM_OVERLAY &&
-          (!customOverlay ||
-            customOverlay.size < 1 ||
-            customOverlay.size > MAX_UPLOAD_SIZE)
+          !customOverlay
+        ) {
+          const member = resolvePrideTarget(
+            interaction.options,
+            interaction.user
+          );
+          await interaction.showModal(createOverlayUploadModal(member.id));
+          return;
+        }
+
+        if (
+          customOverlay &&
+          (customOverlay.size < 1 || customOverlay.size > MAX_UPLOAD_SIZE)
         ) {
           await interaction.reply({
-            content:
-              'Choose your own overlay requires an image up to 50 MB. Images over 8 MB are compressed automatically.',
+            content: 'Please choose an image up to 50 MB.',
             ephemeral: true,
           });
           return;
@@ -389,83 +541,7 @@ client.on('interactionCreate', async interaction => {
           interaction.options,
           interaction.user
         );
-
-        await interaction.deferReply();
-
-        const avatarResponse = await fetch(
-          member.displayAvatarURL({ size: 512, extension: 'png' }),
-          {
-            redirect: 'error',
-            signal: AbortSignal.timeout(10_000),
-          }
-        );
-        if (!avatarResponse.ok) {
-          throw new Error(`Discord avatar request failed with HTTP ${avatarResponse.status}.`);
-        }
-
-        const contentType = avatarResponse.headers.get('content-type') || '';
-        const contentLength = Number(avatarResponse.headers.get('content-length'));
-        if (
-          !contentType.startsWith('image/') ||
-          (Number.isFinite(contentLength) && contentLength > 8 * 1024 * 1024)
-        ) {
-          throw new Error('Discord returned an invalid or oversized avatar image.');
-        }
-
-        const avatar = Buffer.from(await avatarResponse.arrayBuffer());
-        if (avatar.length > 8 * 1024 * 1024) {
-          throw new Error('Discord returned an oversized avatar image.');
-        }
-
-        let overlayImage = flag
-          ? join(__dirname, flag.filename)
-          : null;
-
-        if (customOverlay) {
-          const overlayResponse = await fetch(customOverlay.url, {
-            redirect: 'error',
-            signal: AbortSignal.timeout(10_000),
-          });
-          if (!overlayResponse.ok) {
-            throw new Error(
-              `Uploaded overlay request failed with HTTP ${overlayResponse.status}.`
-            );
-          }
-
-          const contentType = overlayResponse.headers.get('content-type') || '';
-          const contentLength = Number(
-            overlayResponse.headers.get('content-length')
-          );
-          if (
-            !contentType.startsWith('image/') ||
-            (Number.isFinite(contentLength) &&
-              contentLength > MAX_UPLOAD_SIZE)
-          ) {
-            throw new Error('Uploaded overlay is not a valid image or exceeds 50 MB.');
-          }
-
-          overlayImage = Buffer.from(await overlayResponse.arrayBuffer());
-          if (overlayImage.length > MAX_UPLOAD_SIZE) {
-            throw new Error('Uploaded overlay image exceeds 50 MB.');
-          }
-          if (overlayImage.length > MAX_OVERLAY_SIZE) {
-            overlayImage = await compressOverlayToLimit(
-              overlayImage,
-              MAX_OVERLAY_SIZE
-            );
-          }
-        }
-
-        const image = await createImageOverlay(avatar, overlayImage);
-        await interaction.editReply({
-          content: flag
-            ? `Image overlay for <@${member.id}> using the ${flag.name} flag`
-            : `Image overlay for <@${member.id}> using your uploaded image`,
-          files: [
-            new AttachmentBuilder(image, { name: 'image-overlay.png' }),
-          ],
-          allowedMentions: { parse: [] },
-        });
+        await sendImageOverlay(interaction, member, flag, customOverlay);
       }
     }
   } catch (error) {

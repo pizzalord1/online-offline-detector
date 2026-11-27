@@ -67,9 +67,10 @@ opacity from 35% to 55%. Opacity increases where the overlay and avatar colors
 contrast strongly and decreases where they are similar. Choose Rainbow Pride,
 Bisexual, Aroace, Transgender, Pansexual, or Lesbian. To use a camera-roll
 image, choose **Choose your own overlay** and attach an image up to 50 MB.
-Uploads over 8 MB are automatically compressed to 8 MB or less. The selected
-member must have opted in, unless you select yourself. The generated image is
-posted publicly in the channel.
+If no image is attached to the slash command, it opens an upload dialog to
+choose one from your device. Uploads over 8 MB are automatically compressed to
+8 MB or less. The selected member must have opted in, unless you select
+yourself. The generated image is posted publicly in the channel.
 
 All six Pride flag images are included in the container image.
 
